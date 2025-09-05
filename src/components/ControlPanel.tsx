@@ -1,7 +1,6 @@
 import React from 'react'
 import {
   Box,
-  Button,
   HStack,
   Slider,
   SliderTrack,
@@ -58,13 +57,16 @@ const ControlPanel: React.FC = () => {
   return (
     <Box
       p={6}
-      bg="white"
       borderRadius="lg"
       shadow="md"
       border="1px"
-      borderColor="gray.200"
       w="full"
       maxW="md"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderColor: 'var(--border-color)',
+        color: 'var(--text-primary)'
+      }}
     >
       <VStack spacing={6}>
         {/* Playback Controls */}
@@ -73,7 +75,7 @@ const ControlPanel: React.FC = () => {
             <IconButton
               aria-label="Previous step"
               icon={<FaStepBackward />}
-              onClick={prevStep}
+              onClick={() => prevStep()}
               isDisabled={isAtStart}
               variant="outline"
               colorScheme="blue"
@@ -96,7 +98,7 @@ const ControlPanel: React.FC = () => {
             <IconButton
               aria-label="Next step"
               icon={<FaStepForward />}
-              onClick={nextStep}
+              onClick={() => nextStep()}
               isDisabled={isAtEnd}
               variant="outline"
               colorScheme="blue"
@@ -106,13 +108,13 @@ const ControlPanel: React.FC = () => {
         </HStack>
 
         {/* Step Counter */}
-        <Text fontSize="sm" color="gray.600">
+        <Text fontSize="sm" style={{ color: 'var(--text-secondary)' }}>
           Step {currentStepIndex + 1} of {algorithmSteps.length || 1}
         </Text>
 
         {/* Speed Control */}
         <VStack spacing={2} w="full">
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <Text fontSize="sm" fontWeight="medium" style={{ color: 'var(--text-primary)' }}>
             Speed: {(6000 - speed) / 1000}x
           </Text>
           <Slider
@@ -129,7 +131,7 @@ const ControlPanel: React.FC = () => {
             </SliderTrack>
             <SliderThumb />
           </Slider>
-          <HStack justify="space-between" w="full" fontSize="xs" color="gray.500">
+          <HStack justify="space-between" w="full" fontSize="xs" style={{ color: 'var(--text-secondary)' }}>
             <Text>Slow</Text>
             <Text>Fast</Text>
           </HStack>

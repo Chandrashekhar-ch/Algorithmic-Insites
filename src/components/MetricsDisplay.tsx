@@ -97,23 +97,26 @@ const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
   return (
     <Box
       p={6}
-      bg="white"
       borderRadius="lg"
       shadow="md"
       border="1px"
-      borderColor="gray.200"
       w="full"
       maxW="md"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderColor: 'var(--border-color)',
+        color: 'var(--text-primary)'
+      }}
     >
       <VStack spacing={4} align="stretch">
         {/* Algorithm Info */}
         <VStack spacing={2} align="stretch">
-          <Text fontSize="lg" fontWeight="semibold" color="gray.700">
+          <Text fontSize="lg" fontWeight="semibold" style={{ color: 'var(--text-primary)' }}>
             Algorithm Metrics
           </Text>
           
           <HStack justify="space-between" align="center">
-            <Text fontSize="md" fontWeight="medium" color="gray.600">
+            <Text fontSize="md" fontWeight="medium" style={{ color: 'var(--text-secondary)' }}>
               {algorithmInfo.name}
             </Text>
             <Badge colorScheme="blue" fontSize="sm">
@@ -126,20 +129,20 @@ const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
 
         {/* Complexity Analysis */}
         <VStack spacing={3} align="stretch">
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <Text fontSize="sm" fontWeight="medium" style={{ color: 'var(--text-primary)' }}>
             Complexity Analysis
           </Text>
           
           <HStack justify="space-between">
             <VStack spacing={1} align="start">
-              <Text fontSize="xs" color="gray.500">Time Complexity</Text>
+              <Text fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Time Complexity</Text>
               <Text fontSize="sm" fontWeight="semibold" color="orange.600">
                 {algorithmInfo.time}
               </Text>
             </VStack>
             
             <VStack spacing={1} align="end">
-              <Text fontSize="xs" color="gray.500">Space Complexity</Text>
+              <Text fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Space Complexity</Text>
               <Text fontSize="sm" fontWeight="semibold" color="purple.600">
                 {algorithmInfo.space}
               </Text>
@@ -151,20 +154,20 @@ const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
 
         {/* Performance Metrics */}
         <VStack spacing={3} align="stretch">
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <Text fontSize="sm" fontWeight="medium" style={{ color: 'var(--text-primary)' }}>
             Performance Metrics
           </Text>
           
           <StatGroup>
             <Stat>
-              <StatLabel fontSize="xs">Comparisons</StatLabel>
+              <StatLabel fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Comparisons</StatLabel>
               <StatNumber fontSize="lg" color="blue.600">
                 {totalComparisons}
               </StatNumber>
             </Stat>
             
             <Stat>
-              <StatLabel fontSize="xs">Swaps</StatLabel>
+              <StatLabel fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Swaps</StatLabel>
               <StatNumber fontSize="lg" color="green.600">
                 {totalSwaps}
               </StatNumber>
@@ -173,14 +176,14 @@ const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
           
           <StatGroup>
             <Stat>
-              <StatLabel fontSize="xs">Array Accesses</StatLabel>
+              <StatLabel fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Array Accesses</StatLabel>
               <StatNumber fontSize="lg" color="purple.600">
                 {totalAccesses}
               </StatNumber>
             </Stat>
             
             <Stat>
-              <StatLabel fontSize="xs">Progress</StatLabel>
+              <StatLabel fontSize="xs" style={{ color: 'var(--text-secondary)' }}>Progress</StatLabel>
               <StatNumber fontSize="lg" color="orange.600">
                 {progress}%
               </StatNumber>
@@ -192,20 +195,20 @@ const MetricsDisplay: React.FC<MetricsDisplayProps> = ({
 
         {/* Current Step Info */}
         <VStack spacing={2} align="stretch">
-          <Text fontSize="sm" fontWeight="medium" color="gray.700">
+          <Text fontSize="sm" fontWeight="medium" style={{ color: 'var(--text-primary)' }}>
             Current Step
           </Text>
           
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" style={{ color: 'var(--text-secondary)' }}>
             {currentStep?.description || 'No algorithm running'}
           </Text>
           
           {dataset.length > 0 && (
             <HStack justify="space-between">
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" style={{ color: 'var(--text-secondary)' }}>
                 Dataset Size: {dataset.length}
               </Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" style={{ color: 'var(--text-secondary)' }}>
                 Step: {currentStepIndex + 1}/{algorithmSteps.length || 1}
               </Text>
             </HStack>

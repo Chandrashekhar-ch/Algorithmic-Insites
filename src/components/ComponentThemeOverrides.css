@@ -1,0 +1,104 @@
+/* Component Theme Overrides - Aggressive fixes for stubborn components */
+
+/* Target all Chakra UI components specifically */
+html[data-theme='light'] {
+  /* Override Chakra UI CSS variables */
+  --chakra-colors-gray-50: #f9fafb !important;
+  --chakra-colors-gray-100: #f3f4f6 !important;
+  --chakra-colors-gray-200: #e5e7eb !important;
+  --chakra-colors-gray-300: #d1d5db !important;
+  --chakra-colors-gray-400: #9ca3af !important;
+  --chakra-colors-gray-500: #6b7280 !important;
+  --chakra-colors-gray-600: #4b5563 !important;
+  --chakra-colors-gray-700: #374151 !important;
+  --chakra-colors-gray-800: #1f2937 !important;
+  --chakra-colors-gray-900: #111827 !important;
+}
+
+html[data-theme='dark'] {
+  /* Keep original dark colors for dark theme */
+  --chakra-colors-gray-50: #f7fafc !important;
+  --chakra-colors-gray-100: #edf2f7 !important;
+  --chakra-colors-gray-200: #e2e8f0 !important;
+  --chakra-colors-gray-300: #cbd5e0 !important;
+  --chakra-colors-gray-400: #a0aec0 !important;
+  --chakra-colors-gray-500: #718096 !important;
+  --chakra-colors-gray-600: #4a5568 !important;
+  --chakra-colors-gray-700: #2d3748 !important;
+  --chakra-colors-gray-800: #1a202c !important;
+  --chakra-colors-gray-900: #171923 !important;
+}
+
+/* Force override all panel backgrounds */
+[data-theme='light'] .css-0,
+[data-theme='light'] [class*="css-"],
+[data-theme='light'] .chakra-box,
+[data-theme='light'] .chakra-stack {
+  background: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #1a202c !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme='dark'] .css-0,
+[data-theme='dark'] [class*="css-"],
+[data-theme='dark'] .chakra-box,
+[data-theme='dark'] .chakra-stack {
+  background: rgba(26, 32, 44, 0.95) !important;
+  background-color: rgba(26, 32, 44, 0.95) !important;
+  color: #f7fafc !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+}
+
+/* Specific targeting for the components in the screenshots */
+[data-theme='light'] *[class*="algorithm"],
+[data-theme='light'] *[class*="metrics"],
+[data-theme='light'] *[class*="data"],
+[data-theme='light'] *[class*="control"] {
+  background: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #1a202c !important;
+}
+
+[data-theme='dark'] *[class*="algorithm"],
+[data-theme='dark'] *[class*="metrics"],
+[data-theme='dark'] *[class*="data"],
+[data-theme='dark'] *[class*="control"] {
+  background: rgba(26, 32, 44, 0.95) !important;
+  background-color: rgba(26, 32, 44, 0.95) !important;
+  color: #f7fafc !important;
+}
+
+/* Force all text elements */
+[data-theme='light'] * {
+  color: #1a202c !important;
+}
+
+[data-theme='light'] *[style*="color: white"],
+[data-theme='light'] *[style*="color: #fff"],
+[data-theme='light'] *[style*="color: #ffffff"] {
+  color: #1a202c !important;
+}
+
+[data-theme='dark'] * {
+  color: #f7fafc !important;
+}
+
+[data-theme='dark'] *[style*="color: black"],
+[data-theme='dark'] *[style*="color: #000"],
+[data-theme='dark'] *[style*="color: #000000"] {
+  color: #f7fafc !important;
+}
+
+/* Override any inline styles */
+[data-theme='light'] div[style*="background"],
+[data-theme='light'] div[style*="backgroundColor"] {
+  background: rgba(255, 255, 255, 0.95) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+[data-theme='dark'] div[style*="background"],
+[data-theme='dark'] div[style*="backgroundColor"] {
+  background: rgba(26, 32, 44, 0.95) !important;
+  background-color: rgba(26, 32, 44, 0.95) !important;
+}

@@ -1,17 +1,90 @@
+/* 1. Define color variables for both themes */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  /* Light Mode Palette - Clean and Consistent */
+  --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); /* Light gradient */
+  --bg-secondary: rgba(255, 255, 255, 0.95); /* Clean white panels */
+  --bg-tertiary: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); /* Light tertiary background */
+
+  --text-primary: #2d3748; /* Dark text for contrast on light background */
+  --text-secondary: #4a5568; /* Medium gray for secondary text */
+  --text-accent: #3182ce; /* Blue accent for light mode */
+
+  --button-bg-primary: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --button-text-primary: #ffffff;
+  --button-bg-secondary: rgba(247, 250, 252, 0.9);
+  --button-text-secondary: #2d3748;
+  
+  --border-color: rgba(226, 232, 240, 0.8);
+  --accent-border-color: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --glow-color: rgba(66, 153, 225, 0.2);
+  
+  /* Enhanced border styling */
+  --border-width: 2px;
+  --border-radius: 16px;
+  --border-glow: 0 0 20px rgba(66, 153, 225, 0.3);
+  --border-hover-glow: 0 0 30px rgba(66, 153, 225, 0.5);
+  
+  /* Glass morphism effects */
+  --glass-bg: rgba(255, 255, 255, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  --backdrop-blur: blur(20px);
+  
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  line-height: 1.6;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+html[data-theme='dark'] {
+  /* Dark Mode Palette - Proper Dark Contrast */
+  --bg-primary: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%); /* Deep dark gradient */
+  --bg-secondary: rgba(26, 32, 44, 0.95); /* Dark panels with transparency */
+  --bg-tertiary: linear-gradient(135deg, #2d3748 0%, #4a5568 100%); /* Dark header */
+
+  --text-primary: #f7fafc; /* Light text for contrast */
+  --text-secondary: #cbd5e0; /* Light gray for secondary text */
+  --text-accent: #90cdf4; /* Light blue accent */
+
+  --button-bg-primary: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --button-text-primary: #ffffff;
+  --button-bg-secondary: rgba(45, 55, 72, 0.9);
+  --button-text-secondary: #f7fafc;
+  
+  --border-color: rgba(74, 85, 104, 0.6);
+  --accent-border-color: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --glow-color: rgba(66, 153, 225, 0.4);
+  
+  /* Enhanced border styling for dark mode */
+  --border-width: 2px;
+  --border-radius: 16px;
+  --border-glow: 0 0 25px rgba(66, 153, 225, 0.4);
+  --border-hover-glow: 0 0 35px rgba(66, 153, 225, 0.6);
+  
+  /* Glass morphism effects for dark */
+  --glass-bg: rgba(26, 32, 44, 0.3);
+  --glass-border: rgba(74, 85, 104, 0.4);
+  --backdrop-blur: blur(20px);
+}
+
+/* Fix tooltip or popover issues */
+[data-theme='light'] .chakra-tooltip {
+  background: rgba(45, 55, 72, 0.9) !important;
+  color: white !important;
+}
+
+[data-theme='dark'] .chakra-tooltip {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-primary) !important;
 }
 
 a {
@@ -23,12 +96,326 @@ a:hover {
   color: #535bf2;
 }
 
+/* 2. Apply the variables to your base styles with modern effects */
 body {
   margin: 0;
   display: flex;
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--glass-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-accent);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--glow-color);
+}
+
+/* Global styles for modern beautiful UI */
+* {
+  box-sizing: border-box;
+}
+
+/* Beautiful glass morphism cards with enhanced borders */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: 
+    0 8px 32px var(--shadow-color),
+    var(--border-glow),
+    0 0 0 1px var(--glass-border) inset;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: var(--border-radius);
+  padding: var(--border-width);
+  background: var(--accent-border-color);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: exclude;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glass-card:hover::before {
+  opacity: 0.7;
+}
+
+.glass-card:hover {
+  transform: translateY(-4px);
+  border-color: transparent;
+  box-shadow: 
+    0 12px 48px var(--shadow-color),
+    var(--border-hover-glow),
+    0 0 0 1px var(--glass-border) inset;
+}
+
+/* Modern button styles */
+.modern-button {
+  background: var(--button-bg-primary);
+  color: var(--button-text-primary);
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.modern-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.modern-button:hover::before {
+  left: 100%;
+}
+
+.modern-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--glow-color);
+}
+
+/* Floating animation for special elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Pulse animation for active elements */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Gradient text effect */
+.gradient-text {
+  background: var(--accent-border-color);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Enhanced Chakra UI component styling with proper theming */
+.chakra-ui-light,
+.chakra-ui-dark {
+  background: transparent !important;
+}
+
+/* Proper panel styling for both themes */
+[data-theme='light'] .chakra-box,
+[data-theme='light'] .chakra-stack {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.1) !important;
+}
+
+[data-theme='dark'] .chakra-box,
+[data-theme='dark'] .chakra-stack {
+  background: rgba(26, 32, 44, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Fix text colors in panels */
+[data-theme='light'] .chakra-text {
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .chakra-text {
+  color: var(--text-primary) !important;
+}
+
+/* Fix input and textarea styling */
+[data-theme='light'] input, 
+[data-theme='light'] textarea, 
+[data-theme='light'] select {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 12px !important;
+}
+
+[data-theme='dark'] input, 
+[data-theme='dark'] textarea, 
+[data-theme='dark'] select {
+  background: rgba(45, 55, 72, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+  border-radius: 12px !important;
+}
+
+/* Fix button styling for proper contrast */
+[data-theme='light'] button {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-radius: 12px !important;
+}
+
+[data-theme='light'] button:hover {
+  background: var(--button-bg-primary) !important;
+  color: var(--button-text-primary) !important;
+  border-color: var(--text-accent) !important;
+}
+
+[data-theme='dark'] button {
+  background: rgba(45, 55, 72, 0.8) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+  border-radius: 12px !important;
+}
+
+[data-theme='dark'] button:hover {
+  background: var(--button-bg-primary) !important;
+  color: var(--button-text-primary) !important;
+  border-color: var(--text-accent) !important;
+}
+
+/* Fix dropdown and select elements */
+[data-theme='light'] .chakra-select__wrapper select,
+[data-theme='light'] .chakra-menu__list {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme='dark'] .chakra-select__wrapper select,
+[data-theme='dark'] .chakra-menu__list {
+  background: rgba(26, 32, 44, 0.95) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+}
+
+/* Fix tab styling */
+[data-theme='light'] .chakra-tabs__tab {
+  color: var(--text-secondary) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+[data-theme='light'] .chakra-tabs__tab[aria-selected="true"] {
+  color: var(--text-accent) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme='dark'] .chakra-tabs__tab {
+  color: var(--text-secondary) !important;
+  background: rgba(45, 55, 72, 0.6) !important;
+}
+
+[data-theme='dark'] .chakra-tabs__tab[aria-selected="true"] {
+  color: var(--text-accent) !important;
+  background: rgba(45, 55, 72, 0.9) !important;
+}
+
+/* Fix code editor and pre elements */
+[data-theme='light'] pre,
+[data-theme='light'] code {
+  background: rgba(248, 249, 250, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme='dark'] pre,
+[data-theme='dark'] code {
+  background: rgba(26, 32, 44, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+}
+
+/* Fix any remaining dark elements in light mode */
+[data-theme='light'] * {
+  scrollbar-color: rgba(102, 126, 234, 0.6) rgba(248, 249, 250, 0.8);
+}
+
+[data-theme='dark'] * {
+  scrollbar-color: rgba(66, 153, 225, 0.6) rgba(26, 32, 44, 0.8);
+}
+
+/* Ensure proper contrast for all interactive elements */
+[data-theme='light'] .chakra-button {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme='dark'] .chakra-button {
+  background: rgba(45, 55, 72, 0.9) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(74, 85, 104, 0.6) !important;
+}
+
+/* Fix modal and overlay backgrounds */
+[data-theme='light'] .chakra-modal__content {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--text-primary) !important;
+}
+
+[data-theme='dark'] .chakra-modal__content {
+  background: rgba(26, 32, 44, 0.95) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix any tooltip or popover issues */
+[data-theme='light'] .chakra-tooltip {
+  background: rgba(45, 55, 72, 0.9) !important;
+  color: white !important;
+}
+
+[data-theme='dark'] .chakra-tooltip {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-primary) !important;
 }
 
 h1 {
@@ -55,20 +442,69 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
 #root {
   width: 100%;
   margin: 0;
+  background-color: var(--bg-primary);
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+/* Enhanced Component Box Styling */
+.chakra-box {
+  border-width: var(--border-width) !important;
+  border-radius: var(--border-radius) !important;
+  position: relative !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Add beautiful gradient borders on hover */
+.chakra-box:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--border-hover-glow) !important;
+}
+
+/* Specific styling for component boxes with enhanced borders */
+[data-theme='light'] .chakra-box {
+  border-color: rgba(66, 153, 225, 0.3) !important;
+  box-shadow: 
+    0 4px 20px var(--shadow-color),
+    0 0 15px rgba(66, 153, 225, 0.1) !important;
+}
+
+[data-theme='dark'] .chakra-box {
+  border-color: rgba(66, 153, 225, 0.4) !important;
+  box-shadow: 
+    0 4px 20px var(--shadow-color),
+    0 0 15px rgba(66, 153, 225, 0.2) !important;
+}
+
+/* Enhanced borders for specific component types with normal sizes */
+.data-input-box,
+.control-panel-box,
+.metrics-display-box,
+.visualization-canvas-box,
+.output-display-box {
+  border: var(--border-width) solid transparent !important;
+  background: 
+    var(--bg-secondary),
+    linear-gradient(135deg, rgba(66, 153, 225, 0.2), rgba(49, 130, 206, 0.3)) !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
+}
+
+/* Beautiful gradient border animation */
+@keyframes borderGlow {
+  0%, 100% { 
+    border-color: rgba(66, 153, 225, 0.3);
+    box-shadow: 0 0 15px rgba(66, 153, 225, 0.2);
+  }
+  50% { 
+    border-color: rgba(66, 153, 225, 0.6);
+    box-shadow: 0 0 25px rgba(66, 153, 225, 0.4);
+  }
+}
+
+.enhanced-border {
+  animation: borderGlow 3s ease-in-out infinite !important;
 }

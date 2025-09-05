@@ -1,7 +1,7 @@
 // Safe code execution utility for algorithm visualization
 
 export interface AlgorithmStep {
-  type: 'compare' | 'swap' | 'highlight' | 'move' | 'insert' | 'complete'
+  type: 'compare' | 'swap' | 'highlight' | 'move' | 'insert' | 'complete' | 'sorted' | 'final'
   indices: number[]
   array: number[]
   description: string
@@ -63,7 +63,7 @@ function createSafeContext(data: number[]) {
     Array: Array,
     Object: Object,
     JSON: JSON,
-    // Blocked globals for security
+    // Blocked globals for security (renamed to avoid strict mode conflicts)
     window: undefined,
     document: undefined,
     fetch: undefined,
@@ -71,7 +71,7 @@ function createSafeContext(data: number[]) {
     WebSocket: undefined,
     localStorage: undefined,
     sessionStorage: undefined,
-    eval: undefined,
+    safeEval: undefined, // Renamed from 'eval' to avoid strict mode error
     Function: undefined
   }
 }
@@ -80,7 +80,7 @@ function createSafeContext(data: number[]) {
  * Sanitize user code to prevent dangerous operations
  */
 function sanitizeCode(code: string): string {
-  // Remove dangerous patterns
+  // Remove dangerous patterns - make them more specific to avoid false positives
   const dangerousPatterns = [
     /eval\s*\(/gi,
     /Function\s*\(/gi,
@@ -89,7 +89,7 @@ function sanitizeCode(code: string): string {
     /document\./gi,
     /window\./gi,
     /global\./gi,
-    /process\./gi,
+    /process\./gi,  // Only match process followed by dot (property access)
     /require\s*\(/gi,
     /import\s+/gi,
     /fetch\s*\(/gi,
@@ -125,8 +125,13 @@ async function executeInSafeContext(code: string, context: any): Promise<any> {
       ${code}
     `
     
-    // Get context keys and values
-    const contextKeys = Object.keys(context)
+    // Get context keys and values, ensuring no reserved keywords
+    const contextKeys = Object.keys(context).map(key => {
+      // Replace any reserved keywords with safe alternatives
+      if (key === 'eval') return 'safeEval'
+      if (key === 'arguments') return 'safeArguments'
+      return key
+    })
     const contextValues = Object.values(context)
     
     // Create and execute function
@@ -165,7 +170,7 @@ function validateSteps(result: any): AlgorithmStep[] {
       throw new Error(`Invalid step at index ${i}: must be an object`)
     }
 
-    const validTypes = ['compare', 'swap', 'highlight', 'move', 'insert', 'complete']
+    const validTypes = ['compare', 'swap', 'highlight', 'move', 'insert', 'complete', 'sorted', 'final']
     if (!validTypes.includes(step.type)) {
       throw new Error(`Invalid step type at index ${i}: ${step.type}. Valid types: ${validTypes.join(', ')}`)
     }

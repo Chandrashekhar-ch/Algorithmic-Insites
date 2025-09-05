@@ -116,21 +116,24 @@ const DataInput: React.FC = () => {
   return (
     <Box
       p={6}
-      bg="white"
       borderRadius="lg"
       shadow="md"
       border="1px"
-      borderColor="gray.200"
       w="full"
       maxW="md"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderColor: 'var(--border-color)',
+        color: 'var(--text-primary)'
+      }}
     >
       <VStack spacing={4} align="stretch">
-        <Text fontSize="lg" fontWeight="semibold" color="gray.700">
+        <Text fontSize="lg" fontWeight="semibold" style={{ color: 'var(--text-primary)' }}>
           Data Input
         </Text>
         
         <VStack spacing={3} align="stretch">
-          <Text fontSize="sm" color="gray.600">
+          <Text fontSize="sm" style={{ color: 'var(--text-secondary)' }}>
             Enter numbers separated by commas (e.g., 5, 2, 8, 1, 9)
           </Text>
           
@@ -177,21 +180,23 @@ const DataInput: React.FC = () => {
         {dataset.length > 0 && (
           <Box
             p={3}
-            bg="gray.50"
             borderRadius="md"
             border="1px"
-            borderColor="gray.200"
+            style={{
+              background: 'var(--bg-tertiary)',
+              borderColor: 'var(--border-color)'
+            }}
           >
-            <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={2}>
+            <Text fontSize="sm" fontWeight="medium" style={{ color: 'var(--text-primary)' }} mb={2}>
               Current Dataset ({dataset.length} numbers):
             </Text>
-            <Text fontSize="sm" color="gray.600" wordBreak="break-all">
+            <Text fontSize="sm" style={{ color: 'var(--text-secondary)' }} wordBreak="break-all">
               {dataset.join(', ')}
             </Text>
           </Box>
         )}
         
-        <Text fontSize="xs" color="gray.500">
+        <Text fontSize="xs" style={{ color: 'var(--text-secondary)' }}>
           💡 Tip: Press Ctrl+Enter to quickly apply data
         </Text>
       </VStack>

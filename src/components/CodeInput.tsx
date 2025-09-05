@@ -23,12 +23,20 @@ import {
 import { FaPlay, FaCode, FaCopy, FaRandom, FaRobot } from 'react-icons/fa'
 import { useAlgorithmStore } from '../store/algorithmStore'
 import { isAIAvailable, autoAnalyze, getQuickComplexity, detectBugs, getOptimizationSuggestions, getEducationalExplanation, type AnalysisType } from '../services/ollamaService';
+import { codeExecutionService, type SupportedLanguage } from '../services/codeExecutionService';
+import CompilerStatusPanel from './CompilerStatusPanel';
 
 interface CodeInputProps {
   onCodeExecute?: (steps: any[]) => void
+  onExecutionStart?: () => void
+  onExecutionComplete?: (output: string | null, error: string | null, language: string) => void
 }
 
-const CodeInput: React.FC<CodeInputProps> = ({ onCodeExecute }) => {
+const CodeInput: React.FC<CodeInputProps> = ({ 
+  onCodeExecute, 
+  onExecutionStart, 
+  onExecutionComplete 
+}) => {
   const [selectedTemplate, setSelectedTemplate] = useState('bubble-sort')
   const [selectedLanguage, setSelectedLanguage] = useState('javascript')
   const [analysisType, setAnalysisType] = useState<AnalysisType>('detailed-analysis')
@@ -49,13 +57,23 @@ const CodeInput: React.FC<CodeInputProps> = ({ onCodeExecute }) => {
     javascript: {
       'bubble-sort': {
         name: 'Bubble Sort',
-        code: `// Bubble Sort Algorithm in JavaScript
+        code: `/**
+ * Optimized Bubble Sort with comprehensive step-by-step visualization
+ * Logs every comparison and swap with detailed step objects
+ * @param {Array<number>} arr - A list of comparable elements
+ * @returns {Array<object>} An array of step objects detailing the sort operation
+ */
 function bubbleSort(arr) {
   const n = arr.length;
-  const steps = [];
+  const steps = []; // Array to store the steps of the algorithm
   
+  // Traverse through all array elements
   for (let i = 0; i < n - 1; i++) {
+    let swapped = false; // Optimization flag to detect if any swaps occurred
+    
+    // Last i elements are already in place
     for (let j = 0; j < n - i - 1; j++) {
+      // Log comparison step
       steps.push({
         type: 'compare',
         indices: [j, j + 1],
@@ -63,22 +81,49 @@ function bubbleSort(arr) {
         description: \`Comparing \${arr[j]} and \${arr[j + 1]}\`
       });
       
+      // If the element found is greater than the next element, swap them
       if (arr[j] > arr[j + 1]) {
-        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        // Log before swap
         steps.push({
           type: 'swap',
           indices: [j, j + 1],
           array: [...arr],
-          description: \`Swapped \${arr[j + 1]} and \${arr[j]}\`
+          description: \`Swapping \${arr[j]} and \${arr[j + 1]}\`
         });
+        
+        // Perform the actual swap
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        
+        // Log after swap (sorted state)
+        steps.push({
+          type: 'sorted',
+          indices: [j, j + 1],
+          array: [...arr],
+          description: \`Swapped: \${arr[j]} and \${arr[j + 1]} are now in correct positions\`
+        });
+        
+        swapped = true; // Mark that a swap occurred
       }
+    }
+    
+    // If no swapping happened, array is sorted (optimization)
+    if (!swapped) {
+      steps.push({
+        type: 'complete',
+        array: [...arr],
+        indices: [],
+        description: \`No swaps needed - array is sorted after \${i + 1} passes\`
+      });
+      break;
     }
   }
   
+  // Add final step object
   steps.push({
-    type: 'complete',
+    type: 'final',
     array: [...arr],
-    description: 'Sorting complete!'
+    indices: [],
+    description: 'Bubble sort algorithm completed - array is fully sorted!'
   });
   
   return steps;
@@ -341,6 +386,140 @@ public class BubbleSort {
 // This Java code will be simulated in JavaScript for visualization
 // Write your Java algorithm above, it will be converted automatically`
       }
+    },
+    rust: {
+      'bubble-sort': {
+        name: 'Bubble Sort',
+        code: `// Bubble Sort Algorithm in Rust
+#[derive(Debug, Clone)]
+struct AlgorithmStep {
+    step_type: String,
+    indices: Vec<usize>,
+    array: Vec<i32>,
+    description: String,
+}
+
+fn bubble_sort(mut arr: Vec<i32>) -> Vec<AlgorithmStep> {
+    let mut steps = Vec::new();
+    let n = arr.len();
+    
+    for i in 0..(n - 1) {
+        for j in 0..(n - i - 1) {
+            steps.push(AlgorithmStep {
+                step_type: "compare".to_string(),
+                indices: vec![j, j + 1],
+                array: arr.clone(),
+                description: format!("Comparing {} and {}", arr[j], arr[j + 1]),
+            });
+            
+            if arr[j] > arr[j + 1] {
+                arr.swap(j, j + 1);
+                steps.push(AlgorithmStep {
+                    step_type: "swap".to_string(),
+                    indices: vec![j, j + 1],
+                    array: arr.clone(),
+                    description: format!("Swapped {} and {}", arr[j], arr[j + 1]),
+                });
+            }
+        }
+    }
+    
+    steps.push(AlgorithmStep {
+        step_type: "complete".to_string(),
+        indices: vec![],
+        array: arr.clone(),
+        description: "Sorting complete!".to_string(),
+    });
+    
+    steps
+}
+
+fn main() {
+    let data = vec![64, 34, 25, 12, 22, 11, 90];
+    let result = bubble_sort(data);
+    println!("{:?}", result);
+}
+
+// This Rust code will be compiled to WASM for execution
+// Write your Rust algorithm above`
+      }
+    },
+    go: {
+      'bubble-sort': {
+        name: 'Bubble Sort',
+        code: `// Bubble Sort Algorithm in Go
+package main
+
+import (
+    "fmt"
+)
+
+type AlgorithmStep struct {
+    Type        string
+    Indices     []int
+    Array       []int
+    Description string
+}
+
+func bubbleSort(arr []int) []AlgorithmStep {
+    steps := []AlgorithmStep{}
+    n := len(arr)
+    
+    for i := 0; i < n-1; i++ {
+        for j := 0; j < n-i-1; j++ {
+            // Create a copy of the array for this step
+            arrCopy := make([]int, len(arr))
+            copy(arrCopy, arr)
+            
+            steps = append(steps, AlgorithmStep{
+                Type:        "compare",
+                Indices:     []int{j, j + 1},
+                Array:       arrCopy,
+                Description: fmt.Sprintf("Comparing %d and %d", arr[j], arr[j+1]),
+            })
+            
+            if arr[j] > arr[j+1] {
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+                
+                // Create another copy after swap
+                arrCopy2 := make([]int, len(arr))
+                copy(arrCopy2, arr)
+                
+                steps = append(steps, AlgorithmStep{
+                    Type:        "swap",
+                    Indices:     []int{j, j + 1},
+                    Array:       arrCopy2,
+                    Description: fmt.Sprintf("Swapped %d and %d", arr[j], arr[j+1]),
+                })
+            }
+        }
+    }
+    
+    finalCopy := make([]int, len(arr))
+    copy(finalCopy, arr)
+    
+    steps = append(steps, AlgorithmStep{
+        Type:        "complete",
+        Indices:     []int{},
+        Array:       finalCopy,
+        Description: "Sorting complete!",
+    })
+    
+    return steps
+}
+
+func main() {
+    data := []int{64, 34, 25, 12, 22, 11, 90}
+    result := bubbleSort(data)
+    
+    for _, step := range result {
+        fmt.Printf("%+v\\n", step)
+    }
+}
+
+// This Go code will be compiled and executed on a remote service
+// Write your Go algorithm above`
+      }
     }
   }
 
@@ -349,7 +528,12 @@ public class BubbleSort {
 
   // Helper function to get templates for a specific language
   const getTemplatesForLanguage = (language: string) => {
-    return languageTemplates[language as keyof typeof languageTemplates] || languageTemplates.javascript
+    const templates = languageTemplates[language as keyof typeof languageTemplates]
+    if (templates) {
+      return templates
+    }
+    // For languages without templates yet, return JavaScript templates as fallback
+    return languageTemplates.javascript
   }
 
   const handleTemplateChange = (template: string) => {
@@ -451,6 +635,9 @@ public class BubbleSort {
 
     setIsExecuting(true)
     setError(null)
+    
+    // Trigger execution start callback
+    onExecutionStart?.()
 
     try {
       // First, try to extract data directly from the code
@@ -461,7 +648,9 @@ public class BubbleSort {
         try {
           dataToUse = localData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
         } catch (err) {
-          setError('Invalid data format in input field. Please use numbers separated by commas.')
+          const errorMsg = 'Invalid data format in input field. Please use numbers separated by commas.'
+          setError(errorMsg)
+          onExecutionComplete?.(null, errorMsg, selectedLanguage)
           return
         }
       }
@@ -473,7 +662,9 @@ public class BubbleSort {
       
       // If still no data, show error
       if (!dataToUse || dataToUse.length === 0) {
-        setError('No data found! Please include an array of numbers in your code (e.g., [64, 34, 25, 12, 22, 11, 90]) or use the input field below.')
+        const errorMsg = 'No data found! Please include an array of numbers in your code (e.g., [64, 34, 25, 12, 22, 11, 90]) or use the input field below.'
+        setError(errorMsg)
+        onExecutionComplete?.(null, errorMsg, selectedLanguage)
         return
       }
 
@@ -483,27 +674,75 @@ public class BubbleSort {
         setDataset(dataToUse)
       }
 
-      // Translate code to JavaScript if necessary
-      const jsCode = translateCodeToJavaScript(code, selectedLanguage)
+      // Check if the selected language compiler is ready
+      if (!codeExecutionService.isLanguageReady(selectedLanguage as SupportedLanguage)) {
+        const errorMsg = `${selectedLanguage.toUpperCase()} execution environment is not ready. Please check the compiler status panel.`
+        setError(errorMsg)
+        onExecutionComplete?.(null, errorMsg, selectedLanguage)
+        return
+      }
+
+      // Use the new multi-language execution service
+      const executionResult = await codeExecutionService.executeCode(
+        code, 
+        selectedLanguage as SupportedLanguage, 
+        dataToUse
+      )
       
-      // Dynamic import to handle module resolution issues
-      const { parseAndExecuteCode } = await import('../utils/codeExecutor')
-      const executorSteps = await parseAndExecuteCode(jsCode, dataToUse)
-      
-      // Convert codeExecutor steps to store format
-      const storeSteps = executorSteps.map((step, index) => ({
-        id: `step-${index}`,
-        description: step.description,
-        highlightedElements: step.type === 'highlight' ? step.indices : [],
-        comparingElements: step.type === 'compare' ? step.indices : [],
-        swappingElements: step.type === 'swap' ? step.indices : [],
-        data: [...step.array]
-      }))
-      
-      setAlgorithmSteps(storeSteps)
-      onCodeExecute?.(storeSteps)
+      if (!executionResult.success) {
+        const errorMsg = executionResult.error || 'Code execution failed'
+        setError(errorMsg)
+        onExecutionComplete?.(null, errorMsg, selectedLanguage)
+        return
+      }
+
+      // If we have algorithm steps from execution, use them
+      if (executionResult.steps && executionResult.steps.length > 0) {
+        // Convert execution steps to store format
+        const storeSteps = executionResult.steps.map((step, index) => ({
+          id: `step-${index}`,
+          step: index + 1,
+          description: step.description,
+          highlightedElements: step.type === 'highlight' ? step.indices : [],
+          comparingElements: step.type === 'compare' ? step.indices : [],
+          swappingElements: step.type === 'swap' ? step.indices : [],
+          data: [...step.array]
+        }))
+        
+        setAlgorithmSteps(storeSteps)
+        onCodeExecute?.(storeSteps)
+      } else {
+        // Fallback to JavaScript execution for visualization
+        const jsCode = translateCodeToJavaScript(code, selectedLanguage)
+        const { parseAndExecuteCode } = await import('../utils/codeExecutor')
+        const executorSteps = await parseAndExecuteCode(jsCode, dataToUse)
+        
+        const storeSteps = executorSteps.map((step, index) => ({
+          id: `step-${index}`,
+          step: index + 1,
+          description: step.description,
+          highlightedElements: step.type === 'highlight' ? step.indices : [],
+          comparingElements: step.type === 'compare' ? step.indices : [],
+          swappingElements: step.type === 'swap' ? step.indices : [],
+          data: [...step.array]
+        }))
+        
+        setAlgorithmSteps(storeSteps)
+        onCodeExecute?.(storeSteps)
+      }
+
+      // Show execution result in console or as a success message
+      if (executionResult.output) {
+        console.log('Execution Output:', executionResult.output)
+        onExecutionComplete?.(executionResult.output, null, selectedLanguage)
+      } else {
+        onExecutionComplete?.('Code executed successfully!', null, selectedLanguage)
+      }
+
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error executing code')
+      const errorMsg = err instanceof Error ? err.message : 'Error executing code'
+      setError(errorMsg)
+      onExecutionComplete?.(null, errorMsg, selectedLanguage)
     } finally {
       setIsExecuting(false)
     }
@@ -615,6 +854,8 @@ public class BubbleSort {
               <option value="python">Python</option>
               <option value="cpp">C++</option>
               <option value="java">Java</option>
+              <option value="rust">Rust</option>
+              <option value="go">Go</option>
             </Select>
             
             <Select
@@ -641,6 +882,9 @@ public class BubbleSort {
         </HStack>
 
         <Divider />
+
+        {/* Compiler Status Panel */}
+        <CompilerStatusPanel selectedLanguage={selectedLanguage as SupportedLanguage} />
 
         {/* Data Input Section */}
         <Box>
