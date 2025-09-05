@@ -1,268 +1,268 @@
-import React, { useState, useEffect } from 'react'
-import {
-  Box,
-  Text,
-  Spinner,
-  VStack,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Button,
-  HStack,
-  Icon,
-} from '@chakra-ui/react'
-import { FaRobot, FaSync } from 'react-icons/fa'
-import { useStore, useCurrentStep } from '../store/useStore'
-import { getAlgorithmExplanation, checkOllamaAvailability } from '../services/ollamaService'
+import { useState, useEffect } from 'react'
+import { useAlgorithmSteps, useCurrentStepIndex, useIsPlaying } from '../store/useStore'
+import { ollamaService } from '../services/ollamaService'
+import type { AlgorithmExplanationContext } from '../services/ollamaService'
+import type { AlgorithmStep as StoreAlgorithmStep } from '../store/useStore'
 
-const ExplanationPanel: React.FC = () => {
+/**
+ * Type conversion utility to convert store AlgorithmStep to ollamaService AlgorithmStep
+ */
+const convertStoreStepToOllamaStep = (storeStep: StoreAlgorithmStep) => {
+  return {
+    type: 'compare' as const, // Default type, could be enhanced based on storeStep.description
+    indices: storeStep.comparingElements || [],
+    array: storeStep.data || [],
+    description: storeStep.description || ''
+  }
+}
+
+/**
+ * ExplanationPanel Component
+ * 
+ * Provides AI-powered explanations for algorithm steps using Ollama service.
+ * Displays step-by-step breakdown of algorithm execution with contextual insights.
+ */
+export const ExplanationPanel = () => {
+  const steps = useAlgorithmSteps()
+  const currentStepIndex = useCurrentStepIndex()
+  const isAnimating = useIsPlaying()
+  const selectedAlgorithm = 'Algorithm' // Default algorithm name
+  
   const [explanation, setExplanation] = useState<string>('')
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [isOllamaAvailable, setIsOllamaAvailable] = useState<boolean | null>(null)
 
-  // Subscribe to store state
-  const currentStepIndex = useStore((state) => state.currentStepIndex)
-  const currentStep = useCurrentStep()
-  const algorithmSteps = useStore((state) => state.algorithmSteps)
-
-  // Check Ollama availability on mount
+  // Check Ollama availability on component mount
   useEffect(() => {
     const checkAvailability = async () => {
       try {
-        const available = await checkOllamaAvailability()
+        await ollamaService.initialize()
+        const available = ollamaService.isAvailable()
         setIsOllamaAvailable(available)
-      } catch {
+        if (!available) {
+          setError('Ollama service is not available. Please ensure Ollama is running.')
+        }
+      } catch (err) {
+        console.error('Error checking Ollama availability:', err)
         setIsOllamaAvailable(false)
+        setError('Failed to connect to Ollama service.')
       }
     }
 
     checkAvailability()
   }, [])
 
-  // Fetch explanation when current step changes
+  // Generate explanation when current step changes
   useEffect(() => {
-    const fetchExplanation = async () => {
-      // Reset state
-      setError('')
-      
-      // Check if we have a valid current step
-      if (!currentStep || algorithmSteps.length === 0) {
-        setExplanation('')
-        return
-      }
+    if (
+      isOllamaAvailable && 
+      currentStepIndex >= 0 && 
+      steps.length > 0 && 
+      currentStepIndex < steps.length &&
+      selectedAlgorithm &&
+      !isAnimating // Don't generate explanations during animation
+    ) {
+      generateExplanation()
+    }
+  }, [currentStepIndex, steps, selectedAlgorithm, isOllamaAvailable, isAnimating])
 
-      // Check if Ollama is available
-      if (isOllamaAvailable === false) {
-        setExplanation('')
-        return
-      }
-
-      setIsLoading(true)
-
-      try {
-        const explanation = await getAlgorithmExplanation({
-          algorithmName: 'Bubble Sort', // TODO: Make this dynamic based on selected algorithm
-          currentStep
-        })
-        
-        setExplanation(explanation)
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to get explanation'
-        setError(errorMessage)
-        setExplanation('')
-      } finally {
-        setIsLoading(false)
-      }
+  /**
+   * Generates AI explanation for the current algorithm step
+   */
+  const generateExplanation = async () => {
+    if (currentStepIndex < 0 || currentStepIndex >= steps.length) {
+      return
     }
 
-    // Only fetch if Ollama availability check is complete
-    if (isOllamaAvailable !== null) {
-      fetchExplanation()
-    }
-  }, [currentStepIndex, currentStep, algorithmSteps.length, isOllamaAvailable])
-
-  const handleRetry = async () => {
-    if (!currentStep) return
-    
-    setError('')
     setIsLoading(true)
-    
+    setError(null)
+
     try {
-      const explanation = await getAlgorithmExplanation({
-        algorithmName: 'Bubble Sort',
-        currentStep
-      })
+      const currentStep = steps[currentStepIndex]
+      if (!currentStep) {
+        setError('No step data available')
+        return
+      }
       
-      setExplanation(explanation)
+      const previousSteps = steps.slice(0, currentStepIndex)
+      
+      // Convert store step format to ollama service format
+      const ollamaCurrentStep = convertStoreStepToOllamaStep(currentStep)
+      const ollmaPreviousSteps = previousSteps.map(convertStoreStepToOllamaStep)
+
+      const context: AlgorithmExplanationContext = {
+        algorithmName: selectedAlgorithm,
+        currentStep: ollamaCurrentStep,
+        previousSteps: ollmaPreviousSteps,
+        totalSteps: steps.length,
+        stepIndex: currentStepIndex
+      }
+
+      const result = await ollamaService.explainStep(context)
+      setExplanation(result)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to get explanation'
-      setError(errorMessage)
+      console.error('Error generating explanation:', err)
+      setError(`Failed to generate explanation: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCheckOllama = async () => {
-    setIsLoading(true)
-    try {
-      const available = await checkOllamaAvailability()
-      setIsOllamaAvailable(available)
-      if (available && currentStep) {
-        // Automatically fetch explanation if Ollama becomes available
-        const explanation = await getAlgorithmExplanation({
-          algorithmName: 'Bubble Sort',
-          currentStep
-        })
-        setExplanation(explanation)
-      }
-    } catch {
-      setIsOllamaAvailable(false)
-    } finally {
-      setIsLoading(false)
+  /**
+   * Manually refresh the explanation for the current step
+   */
+  const refreshExplanation = () => {
+    if (isOllamaAvailable && !isLoading) {
+      generateExplanation()
     }
   }
 
-  return (
-    <Box
-      p={6}
-      bg="white"
-      borderRadius="lg"
-      shadow="md"
-      border="1px"
-      borderColor="gray.200"
-      w="full"
-      maxW="md"
-    >
-      <VStack spacing={4} align="stretch">
-        {/* Header */}
-        <HStack justify="space-between" align="center">
-          <HStack spacing={2}>
-            <Icon as={FaRobot} color="blue.500" />
-            <Text fontSize="lg" fontWeight="semibold" color="gray.700">
-              AI Explanation
-            </Text>
-          </HStack>
-          
-          {error && (
-            <Button
-              size="sm"
-              variant="ghost"
-              colorScheme="blue"
-              leftIcon={<FaSync />}
-              onClick={handleRetry}
-              isLoading={isLoading}
+  /**
+   * Render loading state
+   */
+  if (isOllamaAvailable === null) {
+    return (
+      <div className="explanation-panel">
+        <div className="panel-header">
+          <h3>Algorithm Explanation</h3>
+        </div>
+        <div className="panel-content">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Checking AI service availability...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  /**
+   * Render unavailable state
+   */
+  if (!isOllamaAvailable) {
+    return (
+      <div className="explanation-panel">
+        <div className="panel-header">
+          <h3>Algorithm Explanation</h3>
+          <span className="status-indicator offline">Offline</span>
+        </div>
+        <div className="panel-content">
+          <div className="error-state">
+            <div className="error-icon">⚠️</div>
+            <h4>AI Service Unavailable</h4>
+            <p>
+              The AI explanation service is currently offline. 
+              Please ensure Ollama is running on your system.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="retry-button"
             >
-              Retry
-            </Button>
-          )}
-        </HStack>
+              Retry Connection
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-        {/* Ollama Availability Check */}
-        {isOllamaAvailable === false && (
-          <Alert status="warning" size="sm">
-            <AlertIcon />
-            <Box>
-              <AlertTitle fontSize="sm">Ollama Not Available</AlertTitle>
-              <AlertDescription fontSize="xs">
-                Ollama is not running or the model is not installed. 
-                <Button
-                  size="xs"
-                  variant="link"
-                  colorScheme="blue"
-                  onClick={handleCheckOllama}
-                  ml={1}
-                  isLoading={isLoading}
-                >
-                  Check Again
-                </Button>
-              </AlertDescription>
-            </Box>
-          </Alert>
-        )}
+  /**
+   * Render main explanation panel
+   */
+  return (
+    <div className="explanation-panel">
+      <div className="panel-header">
+        <h3>Algorithm Explanation</h3>
+        <div className="header-controls">
+          <span className="status-indicator online">AI Ready</span>
+          <button 
+            onClick={refreshExplanation}
+            disabled={isLoading || !selectedAlgorithm}
+            className="refresh-button"
+            title="Refresh explanation"
+          >
+            🔄
+          </button>
+        </div>
+      </div>
 
-        {/* Error Display */}
-        {error && (
-          <Alert status="error" size="sm">
-            <AlertIcon />
-            <Box>
-              <AlertTitle fontSize="sm">Explanation Error</AlertTitle>
-              <AlertDescription fontSize="xs">{error}</AlertDescription>
-            </Box>
-          </Alert>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <HStack justify="center" py={4}>
-            <Spinner size="sm" color="blue.500" />
-            <Text fontSize="sm" color="gray.600">
-              Generating explanation...
-            </Text>
-          </HStack>
+      <div className="panel-content">
+        {/* Step Information */}
+        {steps.length > 0 && currentStepIndex >= 0 && (
+          <div className="step-info">
+            <div className="step-counter">
+              Step {currentStepIndex + 1} of {steps.length}
+            </div>
+            {selectedAlgorithm && (
+              <div className="algorithm-name">
+                {selectedAlgorithm.replace(/([A-Z])/g, ' $1').trim()}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Explanation Content */}
-        {!isLoading && explanation && (
-          <Box
-            p={4}
-            bg="blue.50"
-            borderRadius="md"
-            border="1px"
-            borderColor="blue.200"
-          >
-            <Text
-              fontSize="sm"
-              lineHeight="tall"
-              color="gray.700"
-              whiteSpace="pre-wrap"
+        <div className="explanation-content">
+          {isLoading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Generating explanation...</p>
+            </div>
+          ) : error ? (
+            <div className="error-state">
+              <div className="error-icon">❌</div>
+              <p className="error-message">{error}</p>
+              <button onClick={refreshExplanation} className="retry-button">
+                Try Again
+              </button>
+            </div>
+          ) : explanation ? (
+            <div className="explanation-text">
+              <div className="explanation-content-inner">
+                {explanation.split('\n').map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="placeholder-state">
+              <div className="placeholder-icon">🤖</div>
+              <p>
+                {steps.length === 0 
+                  ? "Load an algorithm to see AI-powered explanations"
+                  : isAnimating
+                  ? "Animation in progress..."
+                  : "Select a step to view explanation"
+                }
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Algorithm Overview Button */}
+        {selectedAlgorithm && !isLoading && (
+          <div className="panel-footer">
+            <button 
+              onClick={async () => {
+                setIsLoading(true)
+                try {
+                  const overview = await ollamaService.getAlgorithmOverview(selectedAlgorithm)
+                  setExplanation(overview)
+                } catch (err) {
+                  setError(`Failed to get overview: ${err instanceof Error ? err.message : 'Unknown error'}`)
+                } finally {
+                  setIsLoading(false)
+                }
+              }}
+              className="overview-button"
             >
-              {explanation}
-            </Text>
-          </Box>
+              📖 Algorithm Overview
+            </button>
+          </div>
         )}
-
-        {/* No Content State */}
-        {!isLoading && !explanation && !error && isOllamaAvailable && algorithmSteps.length === 0 && (
-          <Box
-            p={4}
-            bg="gray.50"
-            borderRadius="md"
-            border="1px"
-            borderColor="gray.200"
-            textAlign="center"
-          >
-            <Text fontSize="sm" color="gray.500">
-              Start an algorithm to see AI-powered explanations of each step.
-            </Text>
-          </Box>
-        )}
-
-        {/* Step Info */}
-        {currentStep && (
-          <Box
-            p={3}
-            bg="gray.50"
-            borderRadius="md"
-            border="1px"
-            borderColor="gray.200"
-          >
-            <Text fontSize="xs" fontWeight="medium" color="gray.600" mb={1}>
-              Current Step:
-            </Text>
-            <Text fontSize="sm" color="gray.700">
-              {currentStep.description}
-            </Text>
-          </Box>
-        )}
-
-        {/* Footer Info */}
-        <Text fontSize="xs" color="gray.400" textAlign="center">
-          💡 Powered by Ollama AI • Explanations generated in real-time
-        </Text>
-      </VStack>
-    </Box>
+      </div>
+    </div>
   )
 }
 
