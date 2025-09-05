@@ -52,3 +52,8 @@
 {"level":"\u001b[32minfo\u001b[39m","message":"🚀 Algorithmic Insights API server running on port 3002","timestamp":"2025-09-05T13:15:09.214Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"📡 Frontend URL: http://localhost:3000","timestamp":"2025-09-05T13:15:09.216Z"}
 {"level":"\u001b[32minfo\u001b[39m","message":"🤖 Ollama URL: http://localhost:11434","timestamp":"2025-09-05T13:15:09.216Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"::1 - - [05/Sep/2025:14:04:32 +0000] \"GET / HTTP/1.1\" 404 51 \"http://localhost:3001/?id=9d9ac9cf-f810-497f-9f56-8d8081baea18&vscodeBrowserReqId=1757080418551\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.103.2 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36\"","timestamp":"2025-09-05T14:04:32.262Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"::1 - - [05/Sep/2025:14:04:32 +0000] \"GET /?id=9d9ac9cf-f810-497f-9f56-8d8081baea18&vscodeBrowserReqId=1757080418551 HTTP/1.1\" 404 124 \"http://localhost:3001/?id=9d9ac9cf-f810-497f-9f56-8d8081baea18&vscodeBrowserReqId=1757080418551\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.103.2 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36\"","timestamp":"2025-09-05T14:04:32.288Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"🚀 Algorithmic Insights API server running on port 3001","timestamp":"2025-09-05T14:04:54.680Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"📡 Frontend URL: http://localhost:3000","timestamp":"2025-09-05T14:04:54.683Z"}
+{"level":"\u001b[32minfo\u001b[39m","message":"🤖 Ollama URL: http://localhost:11434","timestamp":"2025-09-05T14:04:54.683Z"}

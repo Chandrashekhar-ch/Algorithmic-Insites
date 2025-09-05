@@ -20,8 +20,9 @@ import {
   FormControl,
   FormLabel,
 } from '@chakra-ui/react'
-import { FaPlay, FaCode, FaCopy, FaRandom } from 'react-icons/fa'
-import { useAlgorithmStore } from '../store/algorithmStore';
+import { FaPlay, FaCode, FaCopy, FaRandom, FaRobot } from 'react-icons/fa'
+import { useAlgorithmStore } from '../store/algorithmStore'
+import { isAIAvailable, autoAnalyze, getQuickComplexity, detectBugs, getOptimizationSuggestions, getEducationalExplanation, type AnalysisType } from '../services/ollamaService';
 
 interface CodeInputProps {
   onCodeExecute?: (steps: any[]) => void
@@ -30,7 +31,10 @@ interface CodeInputProps {
 const CodeInput: React.FC<CodeInputProps> = ({ onCodeExecute }) => {
   const [selectedTemplate, setSelectedTemplate] = useState('bubble-sort')
   const [selectedLanguage, setSelectedLanguage] = useState('javascript')
+  const [analysisType, setAnalysisType] = useState<AnalysisType>('detailed-analysis')
   const [isExecuting, setIsExecuting] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [localData, setLocalData] = useState('64, 34, 25, 12, 22, 11, 90')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -505,6 +509,53 @@ public class BubbleSort {
     }
   }
 
+  const handleAnalyzeCode = async () => {
+    if (!code.trim()) {
+      setError('Please enter some code to analyze')
+      return
+    }
+
+    if (!isAIAvailable()) {
+      setError('AI analysis is not available. Make sure Ollama is running with a suitable model.')
+      return
+    }
+
+    setIsAnalyzing(true)
+    setError(null)
+    setAnalysisResult(null)
+
+    try {
+      let result: string
+      
+      // Use specialized analysis functions based on type
+      switch (analysisType) {
+        case 'quick-complexity':
+          result = await getQuickComplexity(code, selectedLanguage)
+          break
+        case 'bug-detection':
+          result = await detectBugs(code, selectedLanguage)
+          break
+        case 'optimization-suggestions':
+          result = await getOptimizationSuggestions(code, selectedLanguage)
+          break
+        case 'educational-explanation':
+          result = await getEducationalExplanation(code, selectedLanguage)
+          break
+        default:
+          // Use autoAnalyze for comprehensive analysis
+          const autoResults = await autoAnalyze(code, selectedLanguage)
+          result = autoResults.map(r => `**${r.type.toUpperCase()}:**\n${r.result}`).join('\n\n')
+      }
+      
+      setAnalysisResult(result)
+    } catch (error) {
+      console.error('Code analysis error:', error)
+      setError(`Analysis error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText(code)
   }
@@ -678,6 +729,21 @@ public class BubbleSort {
           </Alert>
         )}
 
+        {/* AI Analysis Result */}
+        {analysisResult && (
+          <Alert status="info" borderRadius="md">
+            <AlertIcon />
+            <Box>
+              <AlertTitle mr={2}>🤖 AI Code Analysis:</AlertTitle>
+              <AlertDescription>
+                <Text whiteSpace="pre-wrap" fontSize="sm">
+                  {analysisResult}
+                </Text>
+              </AlertDescription>
+            </Box>
+          </Alert>
+        )}
+
         {/* Controls */}
         <HStack justify="space-between">
           <HStack>
@@ -696,6 +762,36 @@ public class BubbleSort {
               size="sm"
             >
               Execute Code
+            </Button>
+            
+            <Select
+              value={analysisType}
+              onChange={(e) => setAnalysisType(e.target.value as AnalysisType)}
+              size="sm"
+              width="200px"
+              bg={useColorModeValue('white', 'gray.700')}
+            >
+              <option value="detailed-analysis">Detailed Analysis</option>
+              <option value="quick-complexity">Quick Complexity</option>
+              <option value="bug-detection">Bug Detection</option>
+              <option value="optimization-suggestions">Optimization Tips</option>
+              <option value="educational-explanation">Educational</option>
+              <option value="step-by-step">Step by Step</option>
+              <option value="algorithm-identification">Algorithm ID</option>
+              <option value="performance-review">Performance Review</option>
+            </Select>
+            
+            <Button
+              leftIcon={<FaRobot />}
+              colorScheme="purple"
+              variant="outline"
+              onClick={handleAnalyzeCode}
+              isLoading={isAnalyzing}
+              loadingText="Analyzing..."
+              size="sm"
+              isDisabled={!isAIAvailable()}
+            >
+              AI Analysis
             </Button>
           </HStack>
         </HStack>
