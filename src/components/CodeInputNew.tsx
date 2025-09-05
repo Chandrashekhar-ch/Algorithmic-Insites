@@ -21,7 +21,7 @@ import {
   FormLabel,
 } from '@chakra-ui/react'
 import { FaPlay, FaCode, FaCopy, FaRandom } from 'react-icons/fa'
-import { useAlgorithmStore } from '../store/algorithmStore';
+import { useStore } from '../store/useStore'
 
 interface CodeInputProps {
   onCodeExecute?: (steps: any[]) => void
@@ -35,7 +35,7 @@ const CodeInput: React.FC<CodeInputProps> = ({ onCodeExecute }) => {
   const [localData, setLocalData] = useState('64, 34, 25, 12, 22, 11, 90')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   
-  const { dataset, setAlgorithmSteps, setDataset } = useAlgorithmStore()
+  const { dataset, setAlgorithmSteps, setDataset } = useStore()
   
   const bgColor = useColorModeValue('gray.50', 'gray.800')
   const borderColor = useColorModeValue('gray.200', 'gray.600')
@@ -380,68 +380,31 @@ public class BubbleSort {
     return code
   }
 
-  // Function to extract data arrays from code
-  const extractDataFromCode = (code: string, language: string): number[] => {
-    const patterns = {
-      javascript: [
-        // Arrays: [1, 2, 3], [1,2,3], [ 1 , 2 , 3 ]
-        /\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g,
-        // Variables: numbers = [1, 2, 3]
-        /(?:numbers|arr|array|data)\s*=\s*\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g,
-        // Function calls: bubbleSort([1, 2, 3])
-        /\w+\(\s*\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]\s*\)/g
-      ],
-      python: [
-        // Lists: [1, 2, 3], [1,2,3], [ 1 , 2 , 3 ]
-        /\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g,
-        // Variables: numbers = [1, 2, 3]
-        /(?:numbers|arr|array|data)\s*=\s*\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g,
-        // Function calls: bubble_sort([1, 2, 3])
-        /\w+\(\s*\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]\s*\)/g
-      ],
-      cpp: [
-        // Vectors: {1, 2, 3}, vector<int> arr = {1, 2, 3}
-        /\{\s*(\d+(?:\s*,\s*\d+)*)\s*\}/g,
-        // Arrays: [1, 2, 3]
-        /\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g
-      ],
-      java: [
-        // Arrays: {1, 2, 3}, new int[]{1, 2, 3}
-        /\{\s*(\d+(?:\s*,\s*\d+)*)\s*\}/g,
-        // Arrays: [1, 2, 3]
-        /\[\s*(\d+(?:\s*,\s*\d+)*)\s*\]/g
-      ]
-    }
-
-    const languagePatterns = patterns[language as keyof typeof patterns] || patterns.javascript
-    const foundArrays: number[][] = []
-
-    for (const pattern of languagePatterns) {
-      let match
-      while ((match = pattern.exec(code)) !== null) {
-        const numbersStr = match[1]
-        if (numbersStr) {
-          const numbers = numbersStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
-          if (numbers.length > 0) {
-            foundArrays.push(numbers)
-          }
-        }
-      }
-    }
-
-    // Return the largest array found (most likely the main data)
-    if (foundArrays.length > 0) {
-      return foundArrays.reduce((largest, current) => 
-        current.length > largest.length ? current : largest
-      )
-    }
-
-    return []
-  }
-
   const handleExecuteCode = async () => {
     if (!code.trim()) {
       setError('Please enter some code to execute')
+      return
+    }
+
+    // Parse local data or use store dataset as fallback
+    let dataToUse = dataset
+    if (localData.trim()) {
+      try {
+        dataToUse = localData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+        if (dataToUse.length === 0) {
+          setError('Please enter valid numbers separated by commas')
+          return
+        }
+        // Update store dataset for visualization
+        setDataset(dataToUse)
+      } catch (err) {
+        setError('Invalid data format. Please use numbers separated by commas.')
+        return
+      }
+    }
+
+    if (!dataToUse || dataToUse.length === 0) {
+      setError('Please enter some data first')
       return
     }
 
@@ -449,36 +412,6 @@ public class BubbleSort {
     setError(null)
 
     try {
-      // First, try to extract data directly from the code
-      let dataToUse = extractDataFromCode(code, selectedLanguage)
-      
-      // If no data found in code, try to use local data input as fallback
-      if (dataToUse.length === 0 && localData.trim()) {
-        try {
-          dataToUse = localData.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
-        } catch (err) {
-          setError('Invalid data format in input field. Please use numbers separated by commas.')
-          return
-        }
-      }
-      
-      // If still no data, use store dataset as final fallback
-      if (dataToUse.length === 0 && dataset && dataset.length > 0) {
-        dataToUse = dataset
-      }
-      
-      // If still no data, show error
-      if (!dataToUse || dataToUse.length === 0) {
-        setError('No data found! Please include an array of numbers in your code (e.g., [64, 34, 25, 12, 22, 11, 90]) or use the input field below.')
-        return
-      }
-
-      // Update the local data display to show what was extracted
-      if (dataToUse !== dataset) {
-        setLocalData(dataToUse.join(', '))
-        setDataset(dataToUse)
-      }
-
       // Translate code to JavaScript if necessary
       const jsCode = translateCodeToJavaScript(code, selectedLanguage)
       
@@ -595,16 +528,13 @@ public class BubbleSort {
         <Box>
           <FormControl>
             <FormLabel fontSize="sm" fontWeight="semibold">
-              Data Input (auto-extracted from code arrays, or manual fallback)
+              Input Data (comma-separated numbers)
             </FormLabel>
-            <Text fontSize="xs" color="gray.500" mb={2}>
-              Data will be automatically extracted from arrays in your code. If no arrays are found, enter numbers manually below:
-            </Text>
             <HStack>
               <Input
                 value={localData}
                 onChange={(e) => setLocalData(e.target.value)}
-                placeholder="e.g., 64, 34, 25, 12, 22, 11, 90 (fallback if no arrays found in code)"
+                placeholder="64, 34, 25, 12, 22, 11, 90"
                 size="sm"
                 bg={useColorModeValue('white', 'gray.900')}
               />
@@ -627,8 +557,8 @@ public class BubbleSort {
             <Text fontSize="xs" color="gray.500" mt={1}>
               Current data: {localData || 'None'}
             </Text>
-        </FormControl>
-      </Box>
+          </FormControl>
+        </Box>
 
         <Divider />
 

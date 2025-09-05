@@ -5,19 +5,26 @@ import {
   Grid,
   GridItem,
   VStack,
-  HStack,
   Text,
   Switch,
   FormControl,
   FormLabel,
   Divider,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
 } from '@chakra-ui/react'
 import ControlPanel from './components/ControlPanel'
 import DataInput from './components/DataInput'
+import CodeInput from './components/CodeInput'
+import MysticalVisualizationPanel from './components/MysticalVisualizationPanel'
 import MetricsDisplay from './components/MetricsDisplay'
 import ExplanationPanel from './components/ExplanationPanel'
 import PWAInstallPrompt from './components/PWAInstallPrompt'
 import BubbleSortVisualizer from './features/sorting/BubbleSortVisualizer'
+import VisualizationCanvas from './components/VisualizationCanvas'
 import {
   useComparisonMode,
   useStoreActions,
@@ -29,7 +36,7 @@ import { getBubbleSortSteps, BubbleSortState } from './algorithms/bubbleSort'
 
 const App: React.FC = () => {
   const comparisonMode = useComparisonMode()
-  const { setComparisonMode, setAlgorithmSteps, nextStep, pause } = useStoreActions()
+  const { setComparisonMode, setAlgorithmSteps, nextStep } = useStoreActions()
 
   // Datasets and playback state
   const mainDataset = useDataset(false)
@@ -143,7 +150,20 @@ const App: React.FC = () => {
               {/* Left Sidebar */}
               <GridItem rowSpan={3}>
                 <VStack spacing={6}>
-                  <DataInput />
+                  <Tabs variant="soft-rounded" colorScheme="blue" w="full">
+                    <TabList>
+                      <Tab fontSize="sm">Quick Data</Tab>
+                      <Tab fontSize="sm">Custom Code</Tab>
+                    </TabList>
+                    <TabPanels>
+                      <TabPanel px={0}>
+                        <DataInput />
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        <CodeInput />
+                      </TabPanel>
+                    </TabPanels>
+                  </Tabs>
                   <ControlPanel />
                   <Box w="full">
                     <Text fontSize="sm" fontWeight="medium" color="gray.700" mb={3}>
@@ -207,23 +227,27 @@ const App: React.FC = () => {
               {/* Left Sidebar */}
               <GridItem rowSpan={2}>
                 <VStack spacing={6}>
-                  <DataInput />
+                  <Tabs variant="soft-rounded" colorScheme="blue" w="full">
+                    <TabList>
+                      <Tab fontSize="sm">Quick Data</Tab>
+                      <Tab fontSize="sm">Custom Code</Tab>
+                    </TabList>
+                    <TabPanels>
+                      <TabPanel px={0}>
+                        <DataInput />
+                      </TabPanel>
+                      <TabPanel px={0}>
+                        <CodeInput />
+                      </TabPanel>
+                    </TabPanels>
+                  </Tabs>
                   <ControlPanel />
                 </VStack>
               </GridItem>
 
               {/* Main Visualization Area */}
               <GridItem>
-                <VStack spacing={4}>
-                  <Text fontSize="lg" fontWeight="semibold" color="gray.700">
-                    Algorithm Visualization
-                  </Text>
-                  <BubbleSortVisualizer 
-                    width={800} 
-                    height={400}
-                    isComparison={false}
-                  />
-                </VStack>
+                <MysticalVisualizationPanel />
               </GridItem>
 
               {/* Right Sidebar */}
