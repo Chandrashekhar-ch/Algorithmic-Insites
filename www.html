@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --bar-default: #4b5563; /* Gray */
+            --bar-compare: #facc15; /* Yellow */
+            --bar-swap: #ef4444;    /* Red */
+            --bar-sorted: #22c55e;  /* Green */
+            --background-color: #111827;
+            --container-bg: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        /* --- Global Styles --- */
+        .info-box {
+            background-color: var(--container-bg);
+            border-left: 4px solid var(--primary-color);
+        }
+        .visualizer-tab {
+            transition: all 0.2s ease-in-out;
+        }
+        .visualizer-tab.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39);
+        }
+        .btn-disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- Sorting Visualizer Specific Styles --- */
+        #sorting-visualizer .bar { transition: all 0.1s ease; }
+        #sorting-visualizer input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #4b5563; border-radius: 5px; outline: none; opacity: 0.7; transition: opacity .2s; }
+        #sorting-visualizer input[type="range"]:hover { opacity: 1; }
+        #sorting-visualizer input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: var(--primary-color); cursor: pointer; border-radius: 50%; }
+        #sorting-visualizer input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: var(--primary-color); cursor: pointer; border-radius: 50%; }
+        
+        /* --- Pathfinding Visualizer Specific Styles --- */
+        #grid-container { display: grid; gap: 1px; border: 1px solid var(--bar-default); }
+        .node { width: 100%; height: 100%; aspect-ratio: 1/1; background-color: #374151; transition: all 0.15s ease; }
+        .node-start { background-color: #16a34a; border-radius: 50%; animation: pulse 2s infinite; }
+        .node-end { background-color: #dc2626; border-radius: 50%; }
+        .node-wall { background-color: #0c4a6e; transform: scale(0.9); border-radius: 20%; }
+        .node-visited { animation: pop-visited 0.5s forwards; }
+        .node-path { animation: pop-path 0.5s forwards; }
+        @keyframes pop-visited { 0% { background-color: #374151; transform: scale(0.5); border-radius: 50%; } 50% { background-color: #4338ca; transform: scale(1.2); } 100% { background-color: #5b21b6; transform: scale(1); border-radius: 10%; } }
+        @keyframes pop-path { 0% { background-color: var(--bar-compare); transform: scale(0.6); border-radius: 50%; } 100% { background-color: var(--bar-compare); transform: scale(1); } }
+        @keyframes pulse { 0% { transform: scale(0.9); } 50% { transform: scale(1.1); } 100% { transform: scale(0.9); } }
+
+        /* --- Tree Visualizer Specific Styles --- */
+        #tree-container { width: 100%; height: 100%; min-height: 50vh; }
+        .tree-node circle { stroke: var(--primary-color); stroke-width: 3px; fill: var(--container-bg); transition: all 0.3s ease; }
+        .tree-node text { fill: var(--text-primary); font-size: 16px; font-weight: 500; text-anchor: middle; alignment-baseline: central; user-select: none; }
+        .tree-link { stroke: #4b5563; stroke-width: 2px; transition: all 0.3s ease; }
+        .node-highlight circle { fill: var(--bar-compare); stroke: #fde047; }
+        .node-found circle { fill: var(--bar-sorted); stroke: #4ade80; }
+        .node-path-highlight { stroke: var(--bar-compare); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight text-white">
+                Data Structures & Algorithms <span class="text-indigo-400">Visualizer</span>
+            </h1>
+        </header>
+
+        <!-- Visualizer Type Tabs -->
+        <nav class="flex justify-center items-center mb-8 bg-gray-900/50 p-2 rounded-lg gap-x-2">
+            <button class="visualizer-tab active text-gray-300 font-semibold py-2 px-6 rounded-md" data-target="sorting-visualizer">Sorting</button>
+            <button class="visualizer-tab text-gray-300 font-semibold py-2 px-6 rounded-md" data-target="pathfinding-visualizer">Pathfinding</button>
+            <button class="visualizer-tab text-gray-300 font-semibold py-2 px-6 rounded-md" data-target="tree-visualizer">Trees</button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="visualizer-content">
+            <!-- ====================================================== -->
+            <!-- ============== SORTING VISUALIZER ==================== -->
+            <!-- ====================================================== -->
+            <div id="sorting-visualizer">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controls -->
+                    <aside class="lg:w-1/4 w-full">
+                        <div class="bg-gray-800 rounded-lg p-6 shadow-lg space-y-6">
+                            <div>
+                                <h2 class="text-xl font-semibold mb-4 text-white">Controls</h2>
+                                <div class="space-y-4">
+                                     <button id="generate-array-btn" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">New Array</button>
+                                     <button id="sort-btn" class="w-full text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Sort</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="algorithm-select" class="block mb-2 text-sm font-medium text-gray-300">Algorithm</label>
+                                <select id="algorithm-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="bubbleSort">Bubble Sort</option>
+                                    <option value="selectionSort">Selection Sort</option>
+                                    <option value="insertionSort">Insertion Sort</option>
+                                    <option value="mergeSort">Merge Sort</option>
+                                    <option value="quickSort">Quick Sort</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="size-slider" class="block mb-2 text-sm font-medium text-gray-300">Array Size: <span id="size-value">50</span></label>
+                                <input id="size-slider" type="range" min="10" max="150" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <div>
+                                <label for="speed-slider" class="block mb-2 text-sm font-medium text-gray-300">Speed: <span id="speed-value">50</span>ms</label>
+                                <input id="speed-slider" type="range" min="1" max="200" value="50" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+                         <div id="sorting-info-box" class="info-box mt-6 p-4 rounded-lg shadow-lg hidden">
+                            <h3 id="sorting-info-title" class="font-bold text-lg text-indigo-300"></h3>
+                            <p id="sorting-info-desc" class="text-sm text-gray-300 mt-2"></p>
+                        </div>
+                    </aside>
+                    <!-- Visualization Area -->
+                    <div class="lg:w-3/4 w-full bg-gray-900/50 p-4 rounded-lg shadow-inner min-h-[50vh] flex items-end" id="sorting-container"></div>
+                </div>
+            </div>
+
+            <!-- ====================================================== -->
+            <!-- ============= PATHFINDING VISUALIZER ================= -->
+            <!-- ====================================================== -->
+            <div id="pathfinding-visualizer" class="hidden">
+                 <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controls -->
+                    <aside class="lg:w-1/4 w-full">
+                        <div class="bg-gray-800 rounded-lg p-6 shadow-lg space-y-6">
+                            <div>
+                                <h2 class="text-xl font-semibold mb-4 text-white">Controls</h2>
+                                <div class="space-y-4">
+                                     <button id="visualize-path-btn" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Visualize Path</button>
+                                     <button id="clear-board-btn" class="w-full text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Clear Board</button>
+                                     <button id="clear-path-btn" class="w-full text-white bg-yellow-600 hover:bg-yellow-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Clear Path</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="path-algo-select" class="block mb-2 text-sm font-medium text-gray-300">Algorithm</label>
+                                <select id="path-algo-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full p-2.5">
+                                    <option value="astar">A* Search</option>
+                                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="path-info-box" class="info-box mt-6 p-4 rounded-lg shadow-lg">
+                            <h3 id="path-info-title" class="font-bold text-lg text-indigo-300">How to use</h3>
+                            <p id="path-info-desc" class="text-sm text-gray-300 mt-2">
+                                Click and drag on the grid to draw walls. The green node is the start and the red node is the end. Click "Visualize Path" to see the algorithm in action!
+                            </p>
+                        </div>
+                    </aside>
+                    <!-- Visualization Area -->
+                    <div class="lg:w-3/4 w-full bg-gray-900/50 p-4 rounded-lg shadow-inner flex justify-center items-center" id="grid-container-wrapper">
+                         <div id="grid-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ====================================================== -->
+            <!-- ================= TREE VISUALIZER ==================== -->
+            <!-- ====================================================== -->
+            <div id="tree-visualizer" class="hidden">
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <!-- Controls -->
+                    <aside class="lg:w-1/4 w-full">
+                        <div class="bg-gray-800 rounded-lg p-6 shadow-lg space-y-6">
+                            <div>
+                                <h2 class="text-xl font-semibold mb-4 text-white">Binary Search Tree</h2>
+                                <div class="space-y-4">
+                                    <div class="flex gap-2">
+                                        <input type="number" id="tree-node-value" placeholder="Value" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5">
+                                        <button id="tree-insert-btn" class="text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5">Insert</button>
+                                    </div>
+                                    <div class="flex gap-2">
+                                         <button id="tree-delete-btn" class="w-1/2 text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5">Delete</button>
+                                         <button id="tree-find-btn" class="w-1/2 text-white bg-sky-600 hover:bg-sky-700 font-medium rounded-lg text-sm px-5 py-2.5">Find</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold mb-3 text-white">Traversals</h3>
+                                <div class="grid grid-cols-1 gap-3">
+                                     <button id="tree-inorder-btn" class="w-full text-white bg-gray-600 hover:bg-gray-700 font-medium rounded-lg text-sm px-5 py-2.5">In-order</button>
+                                     <button id="tree-preorder-btn" class="w-full text-white bg-gray-600 hover:bg-gray-700 font-medium rounded-lg text-sm px-5 py-2.5">Pre-order</button>
+                                     <button id="tree-postorder-btn" class="w-full text-white bg-gray-600 hover:bg-gray-700 font-medium rounded-lg text-sm px-5 py-2.5">Post-order</button>
+                                </div>
+                            </div>
+                             <div>
+                                 <button id="reset-tree-btn" class="w-full text-white bg-yellow-600 hover:bg-yellow-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Reset Tree</button>
+                            </div>
+                        </div>
+                         <div class="info-box mt-6 p-4 rounded-lg shadow-lg">
+                            <h3 class="font-bold text-lg text-indigo-300">Binary Search Tree</h3>
+                            <p class="text-sm text-gray-300 mt-2">
+                                A node-based binary tree data structure which has the following properties: The left subtree of a node contains only nodes with values lesser than the node’s value. The right subtree contains only nodes with values greater.
+                            </p>
+                        </div>
+                    </aside>
+                    <!-- Visualization Area -->
+                    <div class="lg:w-3/4 w-full bg-gray-900/50 p-4 rounded-lg shadow-inner flex justify-center items-center">
+                        <svg id="tree-container"></svg>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script type="module">
+        // --- GLOBAL APP CONTROLLER ---
+        const tabs = document.querySelectorAll('.visualizer-tab');
+        const visualizerContents = document.querySelectorAll('#visualizer-content > div');
+
+        const switchVisualizer = (targetId) => {
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.target === targetId);
+            });
+            visualizerContents.forEach(content => {
+                content.classList.toggle('hidden', content.id !== targetId);
+            });
+        };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                if (!tab.disabled) {
+                    switchVisualizer(tab.dataset.target);
+                }
+            });
+        });
+
+        // Initialize default view
+        switchVisualizer('sorting-visualizer');
+        
+        // --- MODULE: SORTING VISUALIZER ---
+        const sortingModule = (() => {
+            const container = document.getElementById('sorting-container');
+            const generateBtn = document.getElementById('generate-array-btn');
+            const sortBtn = document.getElementById('sort-btn');
+            const sizeSlider = document.getElementById('size-slider');
+            const speedSlider = document.getElementById('speed-slider');
+            const sizeValue = document.getElementById('size-value');
+            const speedValue = document.getElementById('speed-value');
+            const algorithmSelect = document.getElementById('algorithm-select');
+            const infoBox = document.getElementById('sorting-info-box');
+            const infoTitle = document.getElementById('sorting-info-title');
+            const infoDesc = document.getElementById('sorting-info-desc');
+
+            let array = [];
+            let arraySize = sizeSlider.value;
+            let speed = speedSlider.value;
+            let isSorting = false;
+
+            const algorithmInfo = {
+                bubbleSort: { title: 'Bubble Sort', description: 'Compares adjacent elements and swaps them if they are in the wrong order. This process is repeated until the list is sorted.' },
+                selectionSort: { title: 'Selection Sort', description: 'Repeatedly finds the minimum element from the unsorted part and puts it at the beginning.' },
+                insertionSort: { title: 'Insertion Sort', description: 'Builds the final sorted array one item at a time, inserting each element into its proper position.' },
+                mergeSort: { title: 'Merge Sort', description: 'A divide-and-conquer algorithm that divides the array into halves, sorts them, and then merges them back together.' },
+                quickSort: { title: 'Quick Sort', description: 'A divide-and-conquer algorithm that picks a pivot element and partitions the other elements into two sub-arrays.' }
+            };
+
+            function generateArray() {
+                if (isSorting) return;
+                array = [];
+                for (let i = 0; i < arraySize; i++) {
+                    array.push(Math.floor(Math.random() * 95) + 5);
+                }
+                renderBars();
+            }
+
+            function renderBars() {
+                 container.innerHTML = '';
+                 array.forEach((value, i) => {
+                    const bar = document.createElement('div');
+                    bar.classList.add('bar', 'flex-grow');
+                    bar.style.height = `${value}%`;
+                    bar.style.backgroundColor = 'var(--bar-default)';
+                    const width = Math.max(1, Math.floor(800 / arraySize));
+                    bar.style.width = `${width}px`;
+                    container.appendChild(bar);
+                });
+            }
+
+            function toggleControls(disabled) {
+                 isSorting = disabled;
+                 generateBtn.disabled = disabled;
+                 sortBtn.disabled = disabled;
+                 sizeSlider.disabled = disabled;
+                 algorithmSelect.disabled = disabled;
+            }
+
+            async function startSort() {
+                 if (isSorting) return;
+                 toggleControls(true);
+                 const animations = getAnimations(algorithmSelect.value);
+                 await animate(animations);
+                 finishAnimation();
+            }
+
+            function getAnimations(algorithm) {
+                 const animations = [];
+                 const auxArray = array.slice();
+                 const algoFunctions = { bubbleSort, selectionSort, insertionSort, mergeSort, quickSort };
+                 if (algoFunctions[algorithm]) {
+                    if (algorithm === 'mergeSort') mergeSort(auxArray, 0, auxArray.length - 1, animations);
+                    else if (algorithm === 'quickSort') quickSort(auxArray, 0, auxArray.length - 1, animations);
+                    else algoFunctions[algorithm](auxArray, animations);
+                 }
+                 return animations;
+            }
+
+            async function animate(animations) {
+                 for (let i = 0; i < animations.length; i++) {
+                    const { type, indices, values } = animations[i];
+                    const bars = container.getElementsByClassName('bar');
+                    if (type === 'compare') {
+                        const [barOneIdx, barTwoIdx] = indices;
+                        if(bars[barOneIdx]) bars[barOneIdx].style.backgroundColor = 'var(--bar-compare)';
+                        if(bars[barTwoIdx]) bars[barTwoIdx].style.backgroundColor = 'var(--bar-compare)';
+                    } else if (type === 'swap' || type === 'overwrite') {
+                        const [barOneIdx, barTwoIdx] = indices;
+                        const [newHeightOne, newHeightTwo] = values || [values[0]];
+                        if(bars[barOneIdx]) {
+                            bars[barOneIdx].style.backgroundColor = 'var(--bar-swap)';
+                            bars[barOneIdx].style.height = `${newHeightOne}%`;
+                        }
+                        if(bars[barTwoIdx]) {
+                             bars[barTwoIdx].style.backgroundColor = 'var(--bar-swap)';
+                             if(newHeightTwo) bars[barTwoIdx].style.height = `${newHeightTwo}%`;
+                        }
+                    }
+                    await new Promise(resolve => setTimeout(resolve, speed));
+                    const [barOneIdx, barTwoIdx] = indices;
+                    if (bars[barOneIdx]) bars[barOneIdx].style.backgroundColor = 'var(--bar-default)';
+                    if (bars[barTwoIdx]) bars[barTwoIdx].style.backgroundColor = 'var(--bar-default)';
+                }
+            }
+
+            function finishAnimation() {
+                const bars = container.getElementsByClassName('bar');
+                for(let i = 0; i < bars.length; i++) {
+                    setTimeout(() => {
+                        bars[i].style.backgroundColor = 'var(--bar-sorted)';
+                        if (i === bars.length - 1) toggleControls(false);
+                    }, i * (speed / 2 + 2));
+                }
+            }
+            
+            function bubbleSort(arr, animations){const n=arr.length;for(let i=0;i<n-1;i++)for(let j=0;j<n-i-1;j++){animations.push({type:"compare",indices:[j,j+1]});if(arr[j]>arr[j+1]){animations.push({type:"swap",indices:[j,j+1],values:[arr[j+1],arr[j]]});[arr[j],arr[j+1]]=[arr[j+1],arr[j]]}}}
+            function selectionSort(arr,animations){const n=arr.length;for(let i=0;i<n-1;i++){let t=i;for(let o=i+1;o<n;o++)animations.push({type:"compare",indices:[t,o]}),arr[o]<arr[t]&&(t=o);animations.push({type:"swap",indices:[i,t],values:[arr[t],arr[i]]});[arr[i],arr[t]]=[arr[t],arr[i]]}}
+            function insertionSort(arr,animations){const n=arr.length;for(let i=1;i<n;i++){let t=arr[i],o=i-1;animations.push({type:"compare",indices:[i,o]});for(;o>=0&&arr[o]>t;)animations.push({type:"swap",indices:[o+1,o],values:[arr[o],arr[o+1]]}),arr[o+1]=arr[o],o-=1,o>=0&&animations.push({type:"compare",indices:[i,o]});arr[o+1]=t}}
+            function mergeSort(mainArray,startIdx,endIdx,animations){if(startIdx>=endIdx)return;const middleIdx=Math.floor((startIdx+endIdx)/2);mergeSort(mainArray,startIdx,middleIdx,animations);mergeSort(mainArray,middleIdx+1,endIdx,animations);doMerge(mainArray,startIdx,middleIdx,endIdx,animations)}
+            function doMerge(mainArray,startIdx,middleIdx,endIdx,animations){let k=startIdx,i=startIdx,j=middleIdx+1;const auxiliaryArray=mainArray.slice();for(;i<=middleIdx&&j<=endIdx;)animations.push({type:"compare",indices:[i,j]}),auxiliaryArray[i]<=auxiliaryArray[j]?(animations.push({type:"overwrite",indices:[k],values:[auxiliaryArray[i]]}),mainArray[k++]=auxiliaryArray[i++]):(animations.push({type:"overwrite",indices:[k],values:[auxiliaryArray[j]]}),mainArray[k++]=auxiliaryArray[j++]);for(;i<=middleIdx;)animations.push({type:"compare",indices:[i,i]}),animations.push({type:"overwrite",indices:[k],values:[auxiliaryArray[i]]}),mainArray[k++]=auxiliaryArray[i++];for(;j<=endIdx;)animations.push({type:"compare",indices:[j,j]}),animations.push({type:"overwrite",indices:[k],values:[auxiliaryArray[j]]}),mainArray[k++]=auxiliaryArray[j++]}
+            function quickSort(arr,low,high,animations){if(low<high){const pi=partition(arr,low,high,animations);quickSort(arr,low,pi-1,animations);quickSort(arr,pi+1,high,animations)}}
+            function partition(arr,low,high,animations){const pivot=arr[high];let i=low-1;for(let j=low;j<high;j++)animations.push({type:"compare",indices:[j,high]}),arr[j]<pivot&&(i++,animations.push({type:"swap",indices:[i,j],values:[arr[j],arr[i]]}),[arr[i],arr[j]]=[arr[j],arr[i]]);animations.push({type:"swap",indices:[i+1,high],values:[arr[high],arr[i+1]]});[arr[i+1],arr[high]]=[arr[high],arr[i+1]];return i+1}
+
+            function init() {
+                generateBtn.addEventListener('click', generateArray);
+                sortBtn.addEventListener('click', startSort);
+                sizeSlider.addEventListener('input', e => { if (isSorting) return; arraySize = e.target.value; sizeValue.textContent = arraySize; generateArray(); });
+                speedSlider.addEventListener('input', e => { speed = 201 - e.target.value; speedValue.textContent = `${e.target.value}ms`; });
+                algorithmSelect.addEventListener('change', e => { const info = algorithmInfo[e.target.value]; infoBox.classList.remove('hidden'); infoTitle.textContent = info.title; infoDesc.textContent = info.description; });
+                sizeValue.textContent = sizeSlider.value;
+                speedValue.textContent = `${speedSlider.value}ms`;
+                speed = 201 - speedSlider.value;
+                algorithmSelect.dispatchEvent(new Event('change'));
+                generateArray();
+            }
+            return { init };
+        })();
+
+        // --- MODULE: PATHFINDING VISUALIZER ---
+        const pathfindingModule = (() => {
+            const GRID_WIDTH = 45;
+            const GRID_HEIGHT = 21;
+            const START_NODE_ROW = 10, START_NODE_COL = 8;
+            const END_NODE_ROW = 10, END_NODE_COL = 36;
+
+            let grid = [];
+            let isMousePressed = false;
+            let isVisualizing = false;
+            
+            const gridContainer = document.getElementById('grid-container');
+            const visualizeBtn = document.getElementById('visualize-path-btn');
+            const clearBoardBtn = document.getElementById('clear-board-btn');
+            const clearPathBtn = document.getElementById('clear-path-btn');
+
+            class Node {
+                constructor(row, col) {
+                    this.row = row; this.col = col;
+                    this.isStart = row === START_NODE_ROW && col === START_NODE_COL;
+                    this.isEnd = row === END_NODE_ROW && col === END_NODE_COL;
+                    this.isWall = false;
+                    this.g = Infinity; this.f = Infinity; this.h = Infinity;
+                    this.parent = null;
+                    this.element = document.createElement('div');
+                    this.element.className = `node ${this.isStart ? 'node-start' : ''} ${this.isEnd ? 'node-end' : ''}`;
+                    this.element.id = `node-${row}-${col}`;
+                }
+            }
+
+            function createGrid() {
+                gridContainer.innerHTML = '';
+                grid = [];
+                gridContainer.style.gridTemplateColumns = `repeat(${GRID_WIDTH}, 1fr)`;
+                for (let row = 0; row < GRID_HEIGHT; row++) {
+                    const currentRow = [];
+                    for (let col = 0; col < GRID_WIDTH; col++) {
+                        const node = new Node(row, col);
+                        node.element.addEventListener('mousedown', () => handleMouse(row, col, 'down'));
+                        node.element.addEventListener('mouseenter', () => handleMouse(row, col, 'enter'));
+                        node.element.addEventListener('mouseup', () => handleMouse(row, col, 'up'));
+                        currentRow.push(node);
+                        gridContainer.appendChild(node.element);
+                    }
+                    grid.push(currentRow);
+                }
+            }
+
+            function handleMouse(row, col, type) {
+                if (isVisualizing) return;
+                const node = grid[row][col];
+                if (node.isStart || node.isEnd) return;
+
+                if (type === 'down') {
+                    isMousePressed = true;
+                    toggleWall(node);
+                } else if (type === 'enter') {
+                    if (isMousePressed) toggleWall(node);
+                } else if (type === 'up') {
+                    isMousePressed = false;
+                }
+            }
+
+            function toggleWall(node) {
+                node.isWall = !node.isWall;
+                node.element.classList.toggle('node-wall');
+            }
+            
+            async function visualizePath() {
+                if (isVisualizing) return;
+                isVisualizing = true;
+                togglePathControls(true);
+                clearPath();
+                
+                const startNode = grid[START_NODE_ROW][START_NODE_COL];
+                const endNode = grid[END_NODE_ROW][END_NODE_COL];
+                const algo = document.getElementById('path-algo-select').value;
+                
+                const {visitedNodesInOrder, path} = (algo === 'astar')
+                    ? astar(grid, startNode, endNode)
+                    : dijkstra(grid, startNode, endNode);
+
+                for (let i = 0; i < visitedNodesInOrder.length; i++) {
+                    const node = visitedNodesInOrder[i];
+                    if (!node.isStart && !node.isEnd) {
+                         await new Promise(r => setTimeout(r, 15));
+                         node.element.classList.add('node-visited');
+                    }
+                    if (node === endNode) {
+                        await animateShortestPath(path);
+                        isVisualizing = false;
+                        togglePathControls(false);
+                        return;
+                    }
+                }
+                isVisualizing = false;
+                togglePathControls(false);
+            }
+
+            async function animateShortestPath(path) {
+                for (let i = path.length - 1; i >= 0; i--) {
+                    const node = path[i];
+                    if (!node.isStart && !node.isEnd) {
+                        await new Promise(r => setTimeout(r, 40));
+                        node.element.classList.remove('node-visited');
+                        node.element.classList.add('node-path');
+                    }
+                }
+            }
+
+            function clearBoard() {
+                if(isVisualizing) return;
+                grid.forEach(row => row.forEach(node => {
+                    node.isWall = false;
+                    node.element.className = `node ${node.isStart ? 'node-start' : ''} ${node.isEnd ? 'node-end' : ''}`;
+                }));
+            }
+            
+            function clearPath() {
+                if(isVisualizing) return;
+                grid.forEach(row => row.forEach(node => {
+                    if (!node.isWall && !node.isStart && !node.isEnd) {
+                        node.element.classList.remove('node-visited', 'node-path');
+                    }
+                }));
+            }
+            
+            function togglePathControls(disabled) {
+                document.querySelectorAll('#pathfinding-visualizer button').forEach(el => {
+                     disabled ? el.classList.add('btn-disabled') : el.classList.remove('btn-disabled');
+                });
+            }
+
+            // --- Pathfinding Algorithms ---
+            function getNeighbors(node, grid) {
+                const neighbors = [];
+                const {row, col} = node;
+                if (row > 0) neighbors.push(grid[row - 1][col]);
+                if (row < GRID_HEIGHT - 1) neighbors.push(grid[row + 1][col]);
+                if (col > 0) neighbors.push(grid[row][col - 1]);
+                if (col < GRID_WIDTH - 1) neighbors.push(grid[row][col + 1]);
+                return neighbors.filter(n => !n.isWall);
+            }
+
+            function astar(grid, startNode, endNode) {
+                const openSet = [startNode];
+                const closedSet = [];
+                const visitedNodesInOrder = [];
+                startNode.g = 0;
+                startNode.h = heuristic(startNode, endNode);
+                startNode.f = startNode.g + startNode.h;
+
+                while (openSet.length > 0) {
+                    openSet.sort((a, b) => a.f - b.f);
+                    const currentNode = openSet.shift();
+                    visitedNodesInOrder.push(currentNode);
+
+                    if (currentNode === endNode) {
+                        return {visitedNodesInOrder, path: reconstructPath(endNode)};
+                    }
+
+                    closedSet.push(currentNode);
+
+                    const neighbors = getNeighbors(currentNode, grid);
+                    for (const neighbor of neighbors) {
+                        if (closedSet.includes(neighbor)) continue;
+
+                        const tentativeGScore = currentNode.g + 1;
+                        if (tentativeGScore < neighbor.g) {
+                            neighbor.parent = currentNode;
+                            neighbor.g = tentativeGScore;
+                            neighbor.h = heuristic(neighbor, endNode);
+                            neighbor.f = neighbor.g + neighbor.h;
+                            if (!openSet.includes(neighbor)) {
+                                openSet.push(neighbor);
+                            }
+                        }
+                    }
+                }
+                return {visitedNodesInOrder, path: []}; // No path found
+            }
+            
+            function dijkstra(grid, startNode, endNode) {
+                const unvisitedNodes = grid.flat();
+                const visitedNodesInOrder = [];
+                unvisitedNodes.forEach(node => node.g = Infinity);
+                startNode.g = 0;
+
+                while(unvisitedNodes.length > 0) {
+                    unvisitedNodes.sort((a, b) => a.g - b.g);
+                    const closestNode = unvisitedNodes.shift();
+
+                    if(closestNode.isWall) continue;
+                    if(closestNode.g === Infinity) return {visitedNodesInOrder, path: []};
+                    
+                    visitedNodesInOrder.push(closestNode);
+                    if(closestNode === endNode) return {visitedNodesInOrder, path: reconstructPath(endNode)};
+
+                    const neighbors = getNeighbors(closestNode, grid);
+                    for(const neighbor of neighbors) {
+                        const newDist = closestNode.g + 1;
+                        if(newDist < neighbor.g) {
+                            neighbor.g = newDist;
+                            neighbor.parent = closestNode;
+                        }
+                    }
+                }
+                 return {visitedNodesInOrder, path: []}; // Should not be reached
+            }
+
+            function heuristic(nodeA, nodeB) { // Manhattan distance
+                return Math.abs(nodeA.row - nodeB.row) + Math.abs(nodeA.col - nodeB.col);
+            }
+
+            function reconstructPath(endNode) {
+                const path = [];
+                let currentNode = endNode;
+                while (currentNode !== null) {
+                    path.push(currentNode);
+                    currentNode = currentNode.parent;
+                }
+                return path;
+            }
+            
+            function init() {
+                createGrid();
+                visualizeBtn.addEventListener('click', visualizePath);
+                clearBoardBtn.addEventListener('click', clearBoard);
+                clearPathBtn.addEventListener('click', clearPath);
+            }
+            return { init };
+        })();
+        
+        // --- MODULE: TREE VISUALIZER ---
+        const treeModule = (() => {
+            const svg = document.getElementById('tree-container');
+            const insertBtn = document.getElementById('tree-insert-btn');
+            const deleteBtn = document.getElementById('tree-delete-btn');
+            const findBtn = document.getElementById('tree-find-btn');
+            const valueInput = document.getElementById('tree-node-value');
+            const inorderBtn = document.getElementById('tree-inorder-btn');
+            const preorderBtn = document.getElementById('tree-preorder-btn');
+            const postorderBtn = document.getElementById('tree-postorder-btn');
+            const resetBtn = document.getElementById('reset-tree-btn');
+            
+            let isAnimating = false;
+            const NODE_RADIUS = 22;
+            const Y_SPACING = 60;
+
+            class TreeNode {
+                constructor(value) {
+                    this.value = value;
+                    this.left = null; this.right = null;
+                    this.x = 0; this.y = 0;
+                    this.parent = null; // for positioning
+                }
+            }
+
+            class BinarySearchTree {
+                constructor() { this.root = null; }
+
+                insert(value) {
+                    const newNode = new TreeNode(value);
+                    if (!this.root) { this.root = newNode; return; }
+                    let current = this.root;
+                    while (true) {
+                        if (value === current.value) return; // No duplicates
+                        if (value < current.value) {
+                            if (!current.left) { current.left = newNode; newNode.parent = current; return; }
+                            current = current.left;
+                        } else {
+                            if (!current.right) { current.right = newNode; newNode.parent = current; return; }
+                            current = current.right;
+                        }
+                    }
+                }
+
+                find(value) {
+                    if (!this.root) return {path: [], found: null};
+                    let current = this.root;
+                    const path = [];
+                    while(current) {
+                        path.push(current);
+                        if (value === current.value) return { path, found: current };
+                        current = value < current.value ? current.left : current.right;
+                    }
+                    return { path, found: null };
+                }
+
+                delete(value) { this.root = this._deleteNode(this.root, value); }
+                _deleteNode(node, value) {
+                    if (!node) return null;
+                    if (value < node.value) {
+                        node.left = this._deleteNode(node.left, value);
+                    } else if (value > node.value) {
+                        node.right = this._deleteNode(node.right, value);
+                    } else {
+                        if (!node.left) return node.right;
+                        if (!node.right) return node.left;
+                        let temp = this._findMin(node.right);
+                        node.value = temp.value;
+                        node.right = this._deleteNode(node.right, temp.value);
+                    }
+                    return node;
+                }
+                _findMin(node) { return node.left ? this._findMin(node.left) : node; }
+                
+                getTraversal(type) {
+                    const result = [];
+                    const traversals = {
+                        inorder: (node) => { if (node) { traversals.inorder(node.left); result.push(node); traversals.inorder(node.right); } },
+                        preorder: (node) => { if (node) { result.push(node); traversals.preorder(node.left); traversals.preorder(node.right); } },
+                        postorder: (node) => { if (node) { traversals.postorder(node.left); traversals.postorder(node.right); result.push(node); } }
+                    };
+                    traversals[type](this.root);
+                    return result;
+                }
+            }
+            
+            let bst = new BinarySearchTree();
+
+            function drawTree() {
+                svg.innerHTML = '';
+                if (!bst.root) return;
+                const { width } = svg.getBoundingClientRect();
+
+                // Simple positioning algorithm
+                let pos = { x: width / 2, y: Y_SPACING };
+                bst.root.x = pos.x;
+                bst.root.y = pos.y;
+                positionChildren(bst.root, width);
+                
+                drawNodeAndLines(bst.root);
+            }
+
+            function positionChildren(node, width) {
+                if(!node) return;
+                const level = Math.floor(node.y / Y_SPACING);
+                const horizontalGap = width / Math.pow(2, level + 2);
+
+                if (node.left) {
+                    node.left.x = node.x - horizontalGap;
+                    node.left.y = node.y + Y_SPACING;
+                    positionChildren(node.left, width);
+                }
+                if (node.right) {
+                    node.right.x = node.x + horizontalGap;
+                    node.right.y = node.y + Y_SPACING;
+                    positionChildren(node.right, width);
+                }
+            }
+            
+            function drawNodeAndLines(node) {
+                if (!node) return;
+                
+                if (node.left) {
+                    drawLine(node, node.left);
+                    drawNodeAndLines(node.left);
+                }
+                if (node.right) {
+                    drawLine(node, node.right);
+                    drawNodeAndLines(node.right);
+                }
+
+                const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                g.classList.add('tree-node');
+                g.id = `node-${node.value}`;
+
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+                circle.setAttribute('r', NODE_RADIUS);
+                
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute('x', node.x); text.setAttribute('y', node.y);
+                text.textContent = node.value;
+                
+                g.appendChild(circle); g.appendChild(text);
+                svg.appendChild(g);
+            }
+
+            function drawLine(from, to) {
+                 const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                 line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+                 line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
+                 line.classList.add('tree-link');
+                 line.id = `link-${from.value}-${to.value}`;
+                 svg.prepend(line); 
+            }
+            
+            async function animate(nodes, delay, highlightClass = 'node-highlight', onComplete) {
+                toggleControls(true);
+                for(let i = 0; i < nodes.length; i++) {
+                    const node = nodes[i];
+                    const nodeEl = document.getElementById(`node-${node.value}`);
+                    if(nodeEl) nodeEl.classList.add(highlightClass);
+                    
+                    if(i > 0) {
+                        const prevNode = nodes[i-1];
+                        const linkId = getLinkId(prevNode, node);
+                        const linkEl = document.getElementById(linkId);
+                        if(linkEl) linkEl.classList.add('node-path-highlight');
+                    }
+                    
+                    await new Promise(r => setTimeout(r, delay));
+                }
+                if (onComplete) onComplete();
+                
+                setTimeout(() => {
+                    clearHighlights();
+                    toggleControls(false);
+                }, 1000);
+            }
+            
+            function getLinkId(node1, node2) {
+                return `link-${node1.value}-${node2.value}`;
+            }
+            
+            function clearHighlights() {
+                document.querySelectorAll('.tree-node, .tree-link').forEach(el => {
+                    el.classList.remove('node-highlight', 'node-found', 'node-path-highlight');
+                });
+            }
+
+            function toggleControls(disabled) {
+                isAnimating = disabled;
+                document.querySelectorAll('#tree-visualizer button, #tree-visualizer input').forEach(el => {
+                    disabled ? el.classList.add('btn-disabled') : el.classList.remove('btn-disabled');
+                });
+            }
+
+            function handleInsert() {
+                if(isAnimating) return;
+                const value = parseInt(valueInput.value);
+                if (isNaN(value)) return;
+                bst.insert(value);
+                valueInput.value = '';
+                drawTree();
+            }
+
+            function handleDelete() {
+                if(isAnimating) return;
+                const value = parseInt(valueInput.value);
+                if (isNaN(value)) return;
+                bst.delete(value);
+                valueInput.value = '';
+                drawTree();
+            }
+            
+            function handleFind() {
+                if(isAnimating) return;
+                const value = parseInt(valueInput.value);
+                if (isNaN(value)) return;
+                const {path, found} = bst.find(value);
+                animate(path, 400, 'node-highlight', () => {
+                    if(found) {
+                        document.getElementById(`node-${found.value}`).classList.add('node-found');
+                    }
+                });
+            }
+            
+            function handleTraversal(type) {
+                if(isAnimating) return;
+                const nodesToVisit = bst.getTraversal(type);
+                animate(nodesToVisit, 500);
+            }
+
+            function handleReset() {
+                 if(isAnimating) return;
+                 bst = new BinarySearchTree();
+                 drawTree();
+            }
+
+            function init() {
+                insertBtn.addEventListener('click', handleInsert);
+                deleteBtn.addEventListener('click', handleDelete);
+                findBtn.addEventListener('click', handleFind);
+                inorderBtn.addEventListener('click', () => handleTraversal('inorder'));
+                preorderBtn.addEventListener('click', () => handleTraversal('preorder'));
+                postorderBtn.addEventListener('click', () => handleTraversal('postorder'));
+                resetBtn.addEventListener('click', handleReset);
+                
+                new ResizeObserver(drawTree).observe(svg.parentElement);
+                drawTree();
+            }
+            
+            return { init };
+        })();
+        
+        // --- INITIALIZE ALL MODULES ---
+        sortingModule.init();
+        pathfindingModule.init();
+        treeModule.init();
+
+    </script>
+</body>
+</html>
